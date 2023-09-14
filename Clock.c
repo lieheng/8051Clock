@@ -89,7 +89,8 @@ bit button = 0;
 sbit P3_2 = P3 ^ 2;
 sbit P3_3 = P3 ^ 3;
 
-void Check() // 判断按键是长按还是短按
+// 判断按键是长按还是短按
+void Check()
 {
     checkCount++;
     if (checkCount < 10 / INTERVAL) // 10ms延迟去抖动
@@ -112,7 +113,8 @@ void Check() // 判断按键是长按还是短按
     }
 }
 
-void ShortPress() // 短按处理程序
+// 短按处理程序
+void ShortPress()
 {
     if (button == 0) // 如果按的是键A
     {
@@ -182,7 +184,8 @@ void ShortPress() // 短按处理程序
     shortOrLang = 0;
 }
 
-void LongPress() // 长按处理程序
+// 长按处理程序
+void LongPress()
 {
     if (button == 0) // 如果按的是键A
     {
@@ -340,25 +343,25 @@ void Timer0() interrupt 1
         Display(0xFF);
         break;
     case SET:
-        if (interruptCount < 500)
+        if (interruptCount < (500 / INTERVAL))
             Display(0xFF);
         else
             Display(0); // 关闭数码管
         break;
     case SET_HOUR:
-        if (interruptCount < 500)
+        if (interruptCount < (500 / INTERVAL))
             Display(0xFF);
         else
             Display(0xFC);
         break;
     case SET_MINUTE:
-        if (interruptCount < 500)
+        if (interruptCount < (500 / INTERVAL))
             Display(0xFF);
         else
             Display(0xE7);
         break;
     case SET_SECOND:
-        if (interruptCount < 500)
+        if (interruptCount < (500 / INTERVAL))
             Display(0xFF);
         else
             Display(0x3F);
@@ -379,7 +382,7 @@ void Timer0() interrupt 1
         Display(0xFF);
         break;
     case STOPWATCH_START:
-        stopwatchMSecond++;
+        stopwatchMSecond += INTERVAL;
         if (stopwatchMSecond > 999)
         {
             stopwatchMSecond = 0;
