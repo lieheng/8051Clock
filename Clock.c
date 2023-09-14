@@ -480,6 +480,7 @@ void Timer0() interrupt 1
         break;
     case STOPWATCH_PAUSE:
         Display(0xFF);
+        break;
     case ALARMCLOCK:
         LED8[3] = alarmHour / 10;
         LED8[4] = alarmHour % 10;
