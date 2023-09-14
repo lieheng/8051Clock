@@ -1,0 +1,26 @@
+<html>
+<body>
+<pre>
+<h1>礦ision Build Log</h1>
+<h2>Project:</h2>
+D:\Document\Code\C51\8051Clock\Clock.uvproj
+Project File Date:  09/14/2023
+
+<h2>Output:</h2>
+Build target '目标 1'
+compiling Clock.c...
+linking...
+Program Size: data=23.0 xdata=0 code=468
+creating hex file from "Clock"...
+"Clock" - 0 Error(s), 0 Warning(s).
+Build target '目标 1'
+compiling Clock.c...
+linking...
+Program Size: data=23.0 xdata=0 code=468
+creating hex file from "Clock"...
+"Clock" - 0 Error(s), 0 Warning(s).
+Build target '目标 1'
+linking...
+Program Size: data=23.0 xdata=0 code=468
+creating hex file from "Clock"...
+"Clock" - 0 Error(s), 0 Warning(s).
