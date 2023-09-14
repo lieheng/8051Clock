@@ -3,26 +3,32 @@
 #define INTERVAL 1 // 间隔1毫秒
 
 #define INIT_HOUR 23   // 初始化小时
-#define INIT_MINUTE 59 // 初始化分钟
-#define INIT_SECOND 55 // 初始化秒
+#define INIT_MINUTE 58 // 初始化分钟
+#define INIT_SECOND 58 // 初始化秒
 
 #define HOURLYCHIMETIMES 3 // 整点响铃次数
+#define ALARMCLOCKTIMES 6  // 闹钟响铃次数
 
 unsigned char hour = INIT_HOUR;     // 初始化小时
 unsigned char minute = INIT_MINUTE; // 初始化分钟
 unsigned char second = INIT_SECOND; // 初始化秒
 
+unsigned char alarmHour = 23;   // 闹钟时
+unsigned char alarmMinute = 59; // 闹钟分
+
 enum MODE
 {
-    SHOW,            // 显示模式
-    SET,             // 设置模式
-    SET_HOUR,        // 设置时模式
-    SET_MINUTE,      // 设置分模式
-    SET_SECOND,      // 设置秒模式
-    STOPWATCH,       // 秒表模式
-    STOPWATCH_START, // 秒表计时模式
-    STOPWATCH_PAUSE, // 秒表暂停模式
-    ALARMCLOCK       // 设置闹钟
+    SHOW,             // 显示模式
+    SET,              // 设置模式
+    SET_HOUR,         // 设置时模式
+    SET_MINUTE,       // 设置分模式
+    SET_SECOND,       // 设置秒模式
+    STOPWATCH,        // 秒表模式
+    STOPWATCH_START,  // 秒表计时模式
+    STOPWATCH_PAUSE,  // 秒表暂停模式
+    ALARMCLOCK,       // 闹钟模式
+    ALARMCLOCK_HOUR,  // 设置闹钟时模式
+    ALARMCLOCK_MINUTE // 设置闹钟分模式
 };
 
 unsigned char mode = SHOW; // 模式
@@ -33,6 +39,7 @@ unsigned char LED8[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 unsigned int interruptCount = 0; // 中断次数
 
 bit hourlyChime = 1; // 整点报时功能，1表示开，0表示关
+bit alarm = 1;       // 闹钟功能，1表示响，0表示不响
 
 sbit SEG_DS = P2 ^ 0;   // 74HC595芯片的数据引脚
 sbit SEG_SHCP = P2 ^ 1; // 74HC595芯片的控制引脚，上升沿移入数据
@@ -127,6 +134,9 @@ void ShortPress()
             mode = STOPWATCH;
             break;
         case STOPWATCH:
+            mode = ALARMCLOCK;
+            break;
+        case ALARMCLOCK:
             mode = SHOW;
             break;
         case SET_HOUR:
@@ -138,6 +148,12 @@ void ShortPress()
         case SET_SECOND:
             mode = SET_HOUR;
             break;
+        case ALARMCLOCK_HOUR:
+            mode = ALARMCLOCK_MINUTE;
+            break;
+        case ALARMCLOCK_MINUTE:
+            mode = ALARMCLOCK_HOUR;
+            break;
         default:
             break;
         }
@@ -147,6 +163,8 @@ void ShortPress()
         unsigned char setHour = LED8[0] * 10 + LED8[1];
         unsigned char setMinute = LED8[3] * 10 + LED8[4];
         unsigned char setSecond = LED8[6] * 10 + LED8[7];
+        unsigned char setAlarmHour = LED8[3] * 10 + LED8[4];
+        unsigned char setAlarmMinute = LED8[6] * 10 + LED8[7];
         switch (mode)
         {
         case SET_HOUR:
@@ -176,6 +194,21 @@ void ShortPress()
         case STOPWATCH_PAUSE:
             mode = STOPWATCH_START;
             break;
+        case ALARMCLOCK:
+            alarm = !alarm;
+            break;
+        case ALARMCLOCK_HOUR:
+            setAlarmHour++;
+            setAlarmHour %= 24;
+            LED8[3] = setAlarmHour / 10;
+            LED8[4] = setAlarmHour % 10;
+            break;
+        case ALARMCLOCK_MINUTE:
+            setAlarmMinute++;
+            setAlarmMinute %= 60;
+            LED8[6] = setAlarmMinute / 10;
+            LED8[7] = setAlarmMinute % 10;
+            break;
         default:
             break;
         }
@@ -203,6 +236,16 @@ void LongPress()
 
             mode = SHOW;
             break;
+        case ALARMCLOCK:
+            mode = ALARMCLOCK_HOUR;
+            break;
+        case ALARMCLOCK_HOUR:
+        case ALARMCLOCK_MINUTE:
+            alarmHour = LED8[3] * 10 + LED8[4];
+            alarmMinute = LED8[6] * 10 + LED8[7];
+
+            mode = ALARMCLOCK;
+            break;
         default:
             break;
         }
@@ -221,6 +264,10 @@ void LongPress()
             break;
         case STOPWATCH_PAUSE:
             mode = STOPWATCH;
+            break;
+        case ALARMCLOCK_HOUR:
+        case ALARMCLOCK_MINUTE:
+            mode = ALARMCLOCK;
             break;
         default:
             break;
@@ -280,6 +327,7 @@ void Display(unsigned char enable)
 }
 
 unsigned char hourlyChimeTimes = 0;
+unsigned char alarmClockTimes = 0;
 
 unsigned int stopwatchMSecond = 0;
 unsigned char stopwatchSecond = 0;
@@ -314,9 +362,27 @@ void Timer0() interrupt 1
         LongPress();
     }
 
+    if (mode == SHOW && alarm == 1)
+    {
+        if (hour == alarmHour && minute == alarmMinute && second == 00 && interruptCount == 0)
+            alarmClockTimes = 2 * ALARMCLOCKTIMES;
+        if (alarmClockTimes != 0)
+        {
+            if ((0 < interruptCount && interruptCount < (250 / INTERVAL)) || ((500 / INTERVAL) < interruptCount && interruptCount < (750 / INTERVAL)))
+                Chime = !Chime;
+            else
+                Chime = 0;
+            if (interruptCount % (250 / INTERVAL) == 0)
+            {
+                alarmClockTimes--;
+                Chime = 0;
+            }
+        }
+    }
+
     if (mode == SHOW && hourlyChime == 1)
     {
-        if (hourlyChimeTimes == 0 && minute == 0 && second == 0)
+        if (hourlyChimeTimes == 0 && minute == 0 && second == 0 && interruptCount == 0)
             hourlyChimeTimes = 2 * (HOURLYCHIMETIMES + 1); // 我也不知道这里为什么要加一，但事实就是它会响HOURLYCHIMETIMES-1次，所以要加一补上。
         if (hourlyChimeTimes != 0)
         {
@@ -325,7 +391,10 @@ void Timer0() interrupt 1
             else
                 Chime = 0;
             if (interruptCount % (500 / INTERVAL) == 0)
+            {
                 hourlyChimeTimes--;
+                Chime = 0;
+            }
         }
     }
 
@@ -411,6 +480,38 @@ void Timer0() interrupt 1
         break;
     case STOPWATCH_PAUSE:
         Display(0xFF);
+    case ALARMCLOCK:
+        LED8[3] = alarmHour / 10;
+        LED8[4] = alarmHour % 10;
+        LED8[5] = 16;
+        LED8[6] = alarmMinute / 10;
+        LED8[7] = alarmMinute % 10;
+        if (alarm)
+        {
+            LED8[0] = 17;
+            LED8[1] = 17;
+            LED8[2] = 17;
+        }
+        else
+        {
+            LED8[0] = 0;
+            LED8[1] = 15;
+            LED8[2] = 15;
+        }
+        Display(0xFF);
+        break;
+    case ALARMCLOCK_HOUR:
+        if (interruptCount < (500 / INTERVAL))
+            Display(0xFF);
+        else
+            Display(0xE7);
+        break;
+    case ALARMCLOCK_MINUTE:
+        if (interruptCount < (500 / INTERVAL))
+            Display(0xFF);
+        else
+            Display(0x3F);
+        break;
     default:
         break;
     }

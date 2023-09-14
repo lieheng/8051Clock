@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 18:33:45 PAGE 1   
+C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 19:23:12 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE CLOCK
@@ -9,512 +9,617 @@ line level    source
 
    1          #include <REG51.H>
    2          
-   3          #define INTERVAL 4 // 间隔1毫秒
+   3          #define INTERVAL 1 // 间隔1毫秒
    4          
    5          #define INIT_HOUR 23   // 初始化小时
-   6          #define INIT_MINUTE 59 // 初始化分钟
-   7          #define INIT_SECOND 55 // 初始化秒
+   6          #define INIT_MINUTE 58 // 初始化分钟
+   7          #define INIT_SECOND 58 // 初始化秒
    8          
    9          #define HOURLYCHIMETIMES 3 // 整点响铃次数
-  10          
-  11          unsigned char hour = INIT_HOUR;     // 初始化小时
-  12          unsigned char minute = INIT_MINUTE; // 初始化分钟
-  13          unsigned char second = INIT_SECOND; // 初始化秒
-  14          
-  15          enum MODE
-  16          {
-  17              SHOW,            // 显示模式
-  18              SET,             // 设置模式
-  19              SET_HOUR,        // 设置时模式
-  20              SET_MINUTE,      // 设置分模式
-  21              SET_SECOND,      // 设置秒模式
-  22              STOPWATCH,       // 秒表模式
-  23              STOPWATCH_START, // 秒表计时模式
-  24              STOPWATCH_PAUSE, // 秒表暂停模式
-  25              ALARMCLOCK       // 设置闹钟
-  26          };
-  27          
-  28          unsigned char mode = SHOW; // 模式
-  29          
-  30          unsigned char displayIndex = 0;
-  31          unsigned char LED8[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-  32          
-  33          unsigned int interruptCount = 0; // 中断次数
-  34          
-  35          bit hourlyChime = 1; // 整点报时功能，1表示开，0表示关
-  36          
-  37          sbit SEG_DS = P2 ^ 0;   // 74HC595芯片的数据引脚
-  38          sbit SEG_SHCP = P2 ^ 1; // 74HC595芯片的控制引脚，上升沿移入数据
-  39          sbit SEG_STCP = P2 ^ 2; // 74HC595芯片的控制引脚，上升沿更新数据
+  10          #define ALARMCLOCKTIMES 6  // 闹钟响铃次数
+  11          
+  12          unsigned char hour = INIT_HOUR;     // 初始化小时
+  13          unsigned char minute = INIT_MINUTE; // 初始化分钟
+  14          unsigned char second = INIT_SECOND; // 初始化秒
+  15          
+  16          unsigned char alarmHour = 23;   // 闹钟时
+  17          unsigned char alarmMinute = 59; // 闹钟分
+  18          
+  19          enum MODE
+  20          {
+  21              SHOW,             // 显示模式
+  22              SET,              // 设置模式
+  23              SET_HOUR,         // 设置时模式
+  24              SET_MINUTE,       // 设置分模式
+  25              SET_SECOND,       // 设置秒模式
+  26              STOPWATCH,        // 秒表模式
+  27              STOPWATCH_START,  // 秒表计时模式
+  28              STOPWATCH_PAUSE,  // 秒表暂停模式
+  29              ALARMCLOCK,       // 闹钟模式
+  30              ALARMCLOCK_HOUR,  // 设置闹钟时模式
+  31              ALARMCLOCK_MINUTE // 设置闹钟分模式
+  32          };
+  33          
+  34          unsigned char mode = SHOW; // 模式
+  35          
+  36          unsigned char displayIndex = 0;
+  37          unsigned char LED8[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  38          
+  39          unsigned int interruptCount = 0; // 中断次数
   40          
-  41          sbit Chime = P2 ^ 3; // 蜂鸣器
-  42          
-  43          unsigned char code Seg_Data[] = {
-  44              // 共阳数码管的编码，并将数据定义在CODE区
-  45              0xc0, /*0*/
-  46              0xF9, /*1*/
-  47              0xA4, /*2*/
-  48              0xB0, /*3*/
-  49              0x99, /*4*/
-  50              0x92, /*5*/
-  51              0x82, /*6*/
-  52              0xF8, /*7*/
-  53              0x80, /*8*/
-  54              0x90, /*9*/
-  55              0x88, /*A*/
-C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 18:33:45 PAGE 2   
+  41          bit hourlyChime = 1; // 整点报时功能，1表示开，0表示关
+  42          bit alarm = 1;       // 闹钟功能，1表示响，0表示不响
+  43          
+  44          sbit SEG_DS = P2 ^ 0;   // 74HC595芯片的数据引脚
+  45          sbit SEG_SHCP = P2 ^ 1; // 74HC595芯片的控制引脚，上升沿移入数据
+  46          sbit SEG_STCP = P2 ^ 2; // 74HC595芯片的控制引脚，上升沿更新数据
+  47          
+  48          sbit Chime = P2 ^ 3; // 蜂鸣器
+  49          
+  50          unsigned char code Seg_Data[] = {
+  51              // 共阳数码管的编码，并将数据定义在CODE区
+  52              0xc0, /*0*/
+  53              0xF9, /*1*/
+  54              0xA4, /*2*/
+  55              0xB0, /*3*/
+C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 19:23:12 PAGE 2   
 
-  56              0x83, /*b*/
-  57              0xC6, /*C*/
-  58              0xA1, /*d*/
-  59              0x86, /*E*/
-  60              0x8E, /*F*/
-  61              0xBF, /*-*/
-  62              0xFF, /*OFFF*/
-  63          };
-  64          
-  65          unsigned char code Seg_Addr[] = {
-  66              // 数码管位选编码，控制显示8位中的第几位
-  67              0x01,
-  68              0x02,
-  69              0x04,
-  70              0x08,
-  71              0x10,
-  72              0x20,
-  73              0x40,
-  74              0x80,
-  75              0xFF, // ALL ON
-  76              0x00  // OFF
-  77          };
-  78          
-  79          void DisplayOneCharOnAddr(unsigned char, unsigned char Addr);
-  80          void SEG_Send595OneByte(unsigned char ucData); // 向74HC595写入一个8位的数据
-  81          void SecondIncrease();
-  82          
-  83          unsigned int checkCount = 0;
-  84          unsigned char shortOrLang = 0; // 0表示无效，1表示短按，2表示长按
+  56              0x99, /*4*/
+  57              0x92, /*5*/
+  58              0x82, /*6*/
+  59              0xF8, /*7*/
+  60              0x80, /*8*/
+  61              0x90, /*9*/
+  62              0x88, /*A*/
+  63              0x83, /*b*/
+  64              0xC6, /*C*/
+  65              0xA1, /*d*/
+  66              0x86, /*E*/
+  67              0x8E, /*F*/
+  68              0xBF, /*-*/
+  69              0xFF, /*OFFF*/
+  70          };
+  71          
+  72          unsigned char code Seg_Addr[] = {
+  73              // 数码管位选编码，控制显示8位中的第几位
+  74              0x01,
+  75              0x02,
+  76              0x04,
+  77              0x08,
+  78              0x10,
+  79              0x20,
+  80              0x40,
+  81              0x80,
+  82              0xFF, // ALL ON
+  83              0x00  // OFF
+  84          };
   85          
-  86          bit buttonDown = 0;
-  87          bit button = 0;
-  88          
-  89          sbit P3_2 = P3 ^ 2;
-  90          sbit P3_3 = P3 ^ 3;
-  91          
-  92          // 判断按键是长按还是短按
-  93          void Check()
-  94          {
-  95   1          checkCount++;
-  96   1          if (checkCount < 10 / INTERVAL) // 10ms延迟去抖动
-  97   1              return;
-  98   1      
-  99   1          if (checkCount > 1010 / INTERVAL) // 如果大于一秒，为长按
- 100   1          {
- 101   2              shortOrLang = 2;
- 102   2              checkCount = 0;
- 103   2              buttonDown = 0;
- 104   2          }
- 105   1          else
- 106   1          {
- 107   2              if ((button == 0 && P3_2 == 1) || (button == 1 && P3_3 == 1))
- 108   2              {
- 109   3                  shortOrLang = 1;
- 110   3                  checkCount = 0;
- 111   3                  buttonDown = 0;
- 112   3              }
- 113   2          }
- 114   1      }
- 115          
- 116          // 短按处理程序
- 117          void ShortPress()
-C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 18:33:45 PAGE 3   
+  86          void DisplayOneCharOnAddr(unsigned char, unsigned char Addr);
+  87          void SEG_Send595OneByte(unsigned char ucData); // 向74HC595写入一个8位的数据
+  88          void SecondIncrease();
+  89          
+  90          unsigned int checkCount = 0;
+  91          unsigned char shortOrLang = 0; // 0表示无效，1表示短按，2表示长按
+  92          
+  93          bit buttonDown = 0;
+  94          bit button = 0;
+  95          
+  96          sbit P3_2 = P3 ^ 2;
+  97          sbit P3_3 = P3 ^ 3;
+  98          
+  99          // 判断按键是长按还是短按
+ 100          void Check()
+ 101          {
+ 102   1          checkCount++;
+ 103   1          if (checkCount < 10 / INTERVAL) // 10ms延迟去抖动
+ 104   1              return;
+ 105   1      
+ 106   1          if (checkCount > 1010 / INTERVAL) // 如果大于一秒，为长按
+ 107   1          {
+ 108   2              shortOrLang = 2;
+ 109   2              checkCount = 0;
+ 110   2              buttonDown = 0;
+ 111   2          }
+ 112   1          else
+ 113   1          {
+ 114   2              if ((button == 0 && P3_2 == 1) || (button == 1 && P3_3 == 1))
+ 115   2              {
+ 116   3                  shortOrLang = 1;
+ 117   3                  checkCount = 0;
+C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 19:23:12 PAGE 3   
 
- 118          {
- 119   1          if (button == 0) // 如果按的是键A
- 120   1          {
- 121   2              switch (mode)
- 122   2              {
- 123   3              case SHOW:
- 124   3                  mode = SET;
- 125   3                  break;
- 126   3              case SET:
- 127   3                  mode = STOPWATCH;
- 128   3                  break;
- 129   3              case STOPWATCH:
- 130   3                  mode = SHOW;
- 131   3                  break;
- 132   3              case SET_HOUR:
- 133   3                  mode = SET_MINUTE;
- 134   3                  break;
- 135   3              case SET_MINUTE:
- 136   3                  mode = SET_SECOND;
- 137   3                  break;
- 138   3              case SET_SECOND:
- 139   3                  mode = SET_HOUR;
- 140   3                  break;
- 141   3              default:
- 142   3                  break;
- 143   3              }
- 144   2          }
- 145   1          else
- 146   1          {
- 147   2              unsigned char setHour = LED8[0] * 10 + LED8[1];
- 148   2              unsigned char setMinute = LED8[3] * 10 + LED8[4];
- 149   2              unsigned char setSecond = LED8[6] * 10 + LED8[7];
- 150   2              switch (mode)
- 151   2              {
- 152   3              case SET_HOUR:
- 153   3                  setHour++;
- 154   3                  setHour %= 24;
- 155   3                  LED8[0] = setHour / 10;
- 156   3                  LED8[1] = setHour % 10;
- 157   3                  break;
- 158   3              case SET_MINUTE:
- 159   3                  setMinute++;
- 160   3                  setMinute %= 60;
- 161   3                  LED8[3] = setMinute / 10;
- 162   3                  LED8[4] = setMinute % 10;
- 163   3                  break;
- 164   3              case SET_SECOND:
- 165   3                  setSecond++;
- 166   3                  setSecond %= 60;
- 167   3                  LED8[6] = setSecond / 10;
- 168   3                  LED8[7] = setSecond % 10;
- 169   3                  break;
- 170   3              case STOPWATCH:
- 171   3                  mode = STOPWATCH_START;
- 172   3                  break;
- 173   3              case STOPWATCH_START:
- 174   3                  mode = STOPWATCH_PAUSE;
+ 118   3                  buttonDown = 0;
+ 119   3              }
+ 120   2          }
+ 121   1      }
+ 122          
+ 123          // 短按处理程序
+ 124          void ShortPress()
+ 125          {
+ 126   1          if (button == 0) // 如果按的是键A
+ 127   1          {
+ 128   2              switch (mode)
+ 129   2              {
+ 130   3              case SHOW:
+ 131   3                  mode = SET;
+ 132   3                  break;
+ 133   3              case SET:
+ 134   3                  mode = STOPWATCH;
+ 135   3                  break;
+ 136   3              case STOPWATCH:
+ 137   3                  mode = ALARMCLOCK;
+ 138   3                  break;
+ 139   3              case ALARMCLOCK:
+ 140   3                  mode = SHOW;
+ 141   3                  break;
+ 142   3              case SET_HOUR:
+ 143   3                  mode = SET_MINUTE;
+ 144   3                  break;
+ 145   3              case SET_MINUTE:
+ 146   3                  mode = SET_SECOND;
+ 147   3                  break;
+ 148   3              case SET_SECOND:
+ 149   3                  mode = SET_HOUR;
+ 150   3                  break;
+ 151   3              case ALARMCLOCK_HOUR:
+ 152   3                  mode = ALARMCLOCK_MINUTE;
+ 153   3                  break;
+ 154   3              case ALARMCLOCK_MINUTE:
+ 155   3                  mode = ALARMCLOCK_HOUR;
+ 156   3                  break;
+ 157   3              default:
+ 158   3                  break;
+ 159   3              }
+ 160   2          }
+ 161   1          else
+ 162   1          {
+ 163   2              unsigned char setHour = LED8[0] * 10 + LED8[1];
+ 164   2              unsigned char setMinute = LED8[3] * 10 + LED8[4];
+ 165   2              unsigned char setSecond = LED8[6] * 10 + LED8[7];
+ 166   2              unsigned char setAlarmHour = LED8[3] * 10 + LED8[4];
+ 167   2              unsigned char setAlarmMinute = LED8[6] * 10 + LED8[7];
+ 168   2              switch (mode)
+ 169   2              {
+ 170   3              case SET_HOUR:
+ 171   3                  setHour++;
+ 172   3                  setHour %= 24;
+ 173   3                  LED8[0] = setHour / 10;
+ 174   3                  LED8[1] = setHour % 10;
  175   3                  break;
- 176   3              case STOPWATCH_PAUSE:
- 177   3                  mode = STOPWATCH_START;
- 178   3                  break;
- 179   3              default:
-C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 18:33:45 PAGE 4   
+ 176   3              case SET_MINUTE:
+ 177   3                  setMinute++;
+ 178   3                  setMinute %= 60;
+ 179   3                  LED8[3] = setMinute / 10;
+C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 19:23:12 PAGE 4   
 
- 180   3                  break;
- 181   3              }
- 182   2          }
- 183   1      
- 184   1          shortOrLang = 0;
- 185   1      }
- 186          
- 187          // 长按处理程序
- 188          void LongPress()
- 189          {
- 190   1          if (button == 0) // 如果按的是键A
- 191   1          {
- 192   2              switch (mode)
- 193   2              {
- 194   3              case SET:
- 195   3                  mode = SET_HOUR;
+ 180   3                  LED8[4] = setMinute % 10;
+ 181   3                  break;
+ 182   3              case SET_SECOND:
+ 183   3                  setSecond++;
+ 184   3                  setSecond %= 60;
+ 185   3                  LED8[6] = setSecond / 10;
+ 186   3                  LED8[7] = setSecond % 10;
+ 187   3                  break;
+ 188   3              case STOPWATCH:
+ 189   3                  mode = STOPWATCH_START;
+ 190   3                  break;
+ 191   3              case STOPWATCH_START:
+ 192   3                  mode = STOPWATCH_PAUSE;
+ 193   3                  break;
+ 194   3              case STOPWATCH_PAUSE:
+ 195   3                  mode = STOPWATCH_START;
  196   3                  break;
- 197   3              case SET_HOUR:
- 198   3              case SET_MINUTE:
- 199   3              case SET_SECOND:
- 200   3                  hour = LED8[0] * 10 + LED8[1];
- 201   3                  minute = LED8[3] * 10 + LED8[4];
- 202   3                  second = LED8[6] * 10 + LED8[7];
- 203   3      
- 204   3                  mode = SHOW;
+ 197   3              case ALARMCLOCK:
+ 198   3                  alarm = !alarm;
+ 199   3                  break;
+ 200   3              case ALARMCLOCK_HOUR:
+ 201   3                  setAlarmHour++;
+ 202   3                  setAlarmHour %= 24;
+ 203   3                  LED8[3] = setAlarmHour / 10;
+ 204   3                  LED8[4] = setAlarmHour % 10;
  205   3                  break;
- 206   3              default:
- 207   3                  break;
- 208   3              }
- 209   2          }
- 210   1          else
- 211   1          {
- 212   2              switch (mode)
- 213   2              {
- 214   3              case SHOW:
- 215   3                  hourlyChime = !hourlyChime;
- 216   3                  break;
- 217   3              case SET_HOUR:
- 218   3              case SET_MINUTE:
- 219   3              case SET_SECOND:
- 220   3                  mode = SHOW;
- 221   3                  break;
- 222   3              case STOPWATCH_PAUSE:
- 223   3                  mode = STOPWATCH;
- 224   3                  break;
- 225   3              default:
- 226   3                  break;
- 227   3              }
- 228   2          }
- 229   1      
- 230   1          shortOrLang = 0;
- 231   1      }
- 232          
- 233          void Int0() interrupt 0
- 234          {
- 235   1          if (buttonDown == 0)
- 236   1          {
- 237   2              buttonDown = 1;
- 238   2              button = 0;
- 239   2          }
- 240   1      }
- 241          
-C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 18:33:45 PAGE 5   
+ 206   3              case ALARMCLOCK_MINUTE:
+ 207   3                  setAlarmMinute++;
+ 208   3                  setAlarmMinute %= 60;
+ 209   3                  LED8[6] = setAlarmMinute / 10;
+ 210   3                  LED8[7] = setAlarmMinute % 10;
+ 211   3                  break;
+ 212   3              default:
+ 213   3                  break;
+ 214   3              }
+ 215   2          }
+ 216   1      
+ 217   1          shortOrLang = 0;
+ 218   1      }
+ 219          
+ 220          // 长按处理程序
+ 221          void LongPress()
+ 222          {
+ 223   1          if (button == 0) // 如果按的是键A
+ 224   1          {
+ 225   2              switch (mode)
+ 226   2              {
+ 227   3              case SET:
+ 228   3                  mode = SET_HOUR;
+ 229   3                  break;
+ 230   3              case SET_HOUR:
+ 231   3              case SET_MINUTE:
+ 232   3              case SET_SECOND:
+ 233   3                  hour = LED8[0] * 10 + LED8[1];
+ 234   3                  minute = LED8[3] * 10 + LED8[4];
+ 235   3                  second = LED8[6] * 10 + LED8[7];
+ 236   3      
+ 237   3                  mode = SHOW;
+ 238   3                  break;
+ 239   3              case ALARMCLOCK:
+ 240   3                  mode = ALARMCLOCK_HOUR;
+ 241   3                  break;
+C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 19:23:12 PAGE 5   
 
- 242          void Int1() interrupt 2
- 243          {
- 244   1          if (buttonDown == 0)
- 245   1          {
- 246   2              buttonDown = 1;
- 247   2              button = 1;
- 248   2          }
- 249   1      }
- 250          
- 251          void SecondIncrease()
- 252          {
- 253   1          second++;
- 254   1          if (second > 59)
- 255   1          {
- 256   2              second = 0;
- 257   2              minute++;
- 258   2          }
- 259   1          if (minute > 59)
- 260   1          {
- 261   2              minute = 0;
- 262   2              hour++;
- 263   2          }
- 264   1          if (hour > 23)
- 265   1          {
- 266   2              hour = 0;
- 267   2          }
- 268   1      }
- 269          
- 270          void Display(unsigned char enable)
- 271          {
- 272   1          enable >>= displayIndex;
- 273   1          enable &= 1;
- 274   1          if (enable == 1)
- 275   1              DisplayOneCharOnAddr(LED8[displayIndex], displayIndex); // 显示数码管
- 276   1          else
- 277   1              DisplayOneCharOnAddr(17, displayIndex);
- 278   1          displayIndex++;
- 279   1          displayIndex %= 8; // 显示下一个数码管
- 280   1      }
- 281          
- 282          unsigned char hourlyChimeTimes = 0;
- 283          
- 284          unsigned int stopwatchMSecond = 0;
- 285          unsigned char stopwatchSecond = 0;
- 286          unsigned char stopwatchMinute = 0;
- 287          
- 288          // 定时器0中断服务函数
- 289          void Timer0() interrupt 1
+ 242   3              case ALARMCLOCK_HOUR:
+ 243   3              case ALARMCLOCK_MINUTE:
+ 244   3                  alarmHour = LED8[3] * 10 + LED8[4];
+ 245   3                  alarmMinute = LED8[6] * 10 + LED8[7];
+ 246   3      
+ 247   3                  mode = ALARMCLOCK;
+ 248   3                  break;
+ 249   3              default:
+ 250   3                  break;
+ 251   3              }
+ 252   2          }
+ 253   1          else
+ 254   1          {
+ 255   2              switch (mode)
+ 256   2              {
+ 257   3              case SHOW:
+ 258   3                  hourlyChime = !hourlyChime;
+ 259   3                  break;
+ 260   3              case SET_HOUR:
+ 261   3              case SET_MINUTE:
+ 262   3              case SET_SECOND:
+ 263   3                  mode = SHOW;
+ 264   3                  break;
+ 265   3              case STOPWATCH_PAUSE:
+ 266   3                  mode = STOPWATCH;
+ 267   3                  break;
+ 268   3              case ALARMCLOCK_HOUR:
+ 269   3              case ALARMCLOCK_MINUTE:
+ 270   3                  mode = ALARMCLOCK;
+ 271   3                  break;
+ 272   3              default:
+ 273   3                  break;
+ 274   3              }
+ 275   2          }
+ 276   1      
+ 277   1          shortOrLang = 0;
+ 278   1      }
+ 279          
+ 280          void Int0() interrupt 0
+ 281          {
+ 282   1          if (buttonDown == 0)
+ 283   1          {
+ 284   2              buttonDown = 1;
+ 285   2              button = 0;
+ 286   2          }
+ 287   1      }
+ 288          
+ 289          void Int1() interrupt 2
  290          {
- 291   1      
- 292   1          interruptCount++;
- 293   1      
- 294   1          TH0 = (65536 - INTERVAL * 1000) / 256;
- 295   1          TL0 = (65536 - INTERVAL * 1000) % 256;
- 296   1      
- 297   1          if (interruptCount == (1000 / INTERVAL))
- 298   1          { // 1秒
- 299   2              interruptCount = 0;
- 300   2              SecondIncrease();
- 301   2          }
- 302   1      
- 303   1          if (buttonDown == 1)
-C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 18:33:45 PAGE 6   
+ 291   1          if (buttonDown == 0)
+ 292   1          {
+ 293   2              buttonDown = 1;
+ 294   2              button = 1;
+ 295   2          }
+ 296   1      }
+ 297          
+ 298          void SecondIncrease()
+ 299          {
+ 300   1          second++;
+ 301   1          if (second > 59)
+ 302   1          {
+ 303   2              second = 0;
+C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 19:23:12 PAGE 6   
 
- 304   1          {
- 305   2              Check();
- 306   2          }
- 307   1      
- 308   1          if (shortOrLang == 1)
- 309   1          {
- 310   2              ShortPress();
- 311   2          }
- 312   1          else if (shortOrLang == 2)
- 313   1          {
- 314   2              LongPress();
- 315   2          }
- 316   1      
- 317   1          if (mode == SHOW && hourlyChime == 1)
- 318   1          {
- 319   2              if (hourlyChimeTimes == 0 && minute == 0 && second == 0)
- 320   2                  hourlyChimeTimes = 2 * (HOURLYCHIMETIMES + 1); // 我也不知道这里为什么要加一，但事实就是它会响
+ 304   2              minute++;
+ 305   2          }
+ 306   1          if (minute > 59)
+ 307   1          {
+ 308   2              minute = 0;
+ 309   2              hour++;
+ 310   2          }
+ 311   1          if (hour > 23)
+ 312   1          {
+ 313   2              hour = 0;
+ 314   2          }
+ 315   1      }
+ 316          
+ 317          void Display(unsigned char enable)
+ 318          {
+ 319   1          enable >>= displayIndex;
+ 320   1          enable &= 1;
+ 321   1          if (enable == 1)
+ 322   1              DisplayOneCharOnAddr(LED8[displayIndex], displayIndex); // 显示数码管
+ 323   1          else
+ 324   1              DisplayOneCharOnAddr(17, displayIndex);
+ 325   1          displayIndex++;
+ 326   1          displayIndex %= 8; // 显示下一个数码管
+ 327   1      }
+ 328          
+ 329          unsigned char hourlyChimeTimes = 0;
+ 330          unsigned char alarmClockTimes = 0;
+ 331          
+ 332          unsigned int stopwatchMSecond = 0;
+ 333          unsigned char stopwatchSecond = 0;
+ 334          unsigned char stopwatchMinute = 0;
+ 335          
+ 336          // 定时器0中断服务函数
+ 337          void Timer0() interrupt 1
+ 338          {
+ 339   1      
+ 340   1          interruptCount++;
+ 341   1      
+ 342   1          TH0 = (65536 - INTERVAL * 1000) / 256;
+ 343   1          TL0 = (65536 - INTERVAL * 1000) % 256;
+ 344   1      
+ 345   1          if (interruptCount == (1000 / INTERVAL))
+ 346   1          { // 1秒
+ 347   2              interruptCount = 0;
+ 348   2              SecondIncrease();
+ 349   2          }
+ 350   1      
+ 351   1          if (buttonDown == 1)
+ 352   1          {
+ 353   2              Check();
+ 354   2          }
+ 355   1      
+ 356   1          if (shortOrLang == 1)
+ 357   1          {
+ 358   2              ShortPress();
+ 359   2          }
+ 360   1          else if (shortOrLang == 2)
+ 361   1          {
+ 362   2              LongPress();
+ 363   2          }
+ 364   1      
+ 365   1          if (mode == SHOW && alarm == 1)
+C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 19:23:12 PAGE 7   
+
+ 366   1          {
+ 367   2              if (hour == alarmHour && minute == alarmMinute && second == 00 && interruptCount == 0)
+ 368   2                  alarmClockTimes = 2 * ALARMCLOCKTIMES; // 我也不知道这里为什么要加一，但事实就是它会响ALARMCLO
+             -CKTIMES-1次，所以要加一补上。
+ 369   2              if (alarmClockTimes != 0)
+ 370   2              {
+ 371   3                  if ((0 < interruptCount && interruptCount < (250 / INTERVAL)) || ((500 / INTERVAL) < interrupt
+             -Count && interruptCount < (750 / INTERVAL)))
+ 372   3                      Chime = !Chime;
+ 373   3                  else
+ 374   3                      Chime = 0;
+ 375   3                  if (interruptCount % (250 / INTERVAL) == 0)
+ 376   3                  {
+ 377   4                      alarmClockTimes--;
+ 378   4                      Chime = 0;
+ 379   4                  }
+ 380   3              }
+ 381   2          }
+ 382   1      
+ 383   1          if (mode == SHOW && hourlyChime == 1)
+ 384   1          {
+ 385   2              if (hourlyChimeTimes == 0 && minute == 0 && second == 0 && interruptCount == 0)
+ 386   2                  hourlyChimeTimes = 2 * (HOURLYCHIMETIMES + 1); // 我也不知道这里为什么要加一，但事实就是它会响
              -HOURLYCHIMETIMES-1次，所以要加一补上。
- 321   2              if (hourlyChimeTimes != 0)
- 322   2              {
- 323   3                  if (interruptCount > (500 / INTERVAL))
- 324   3                      Chime = !Chime;
- 325   3                  else
- 326   3                      Chime = 0;
- 327   3                  if (interruptCount % (500 / INTERVAL) == 0)
- 328   3                      hourlyChimeTimes--;
- 329   3              }
- 330   2          }
- 331   1      
- 332   1          switch (mode)
- 333   1          {
- 334   2          case SHOW:
- 335   2              LED8[0] = hour / 10; // 显示小时十位
- 336   2              LED8[1] = hour % 10; // 显示小时个位
- 337   2              LED8[2] = 16;
- 338   2              LED8[3] = minute / 10; // 显示分钟十位
- 339   2              LED8[4] = minute % 10; // 显示分钟个位
- 340   2              LED8[5] = 16;
- 341   2              LED8[6] = second / 10; // 显示秒十位
- 342   2              LED8[7] = second % 10; // 显示秒个位
- 343   2              Display(0xFF);
- 344   2              break;
- 345   2          case SET:
- 346   2              if (interruptCount < (500 / INTERVAL))
- 347   2                  Display(0xFF);
- 348   2              else
- 349   2                  Display(0); // 关闭数码管
- 350   2              break;
- 351   2          case SET_HOUR:
- 352   2              if (interruptCount < (500 / INTERVAL))
- 353   2                  Display(0xFF);
- 354   2              else
- 355   2                  Display(0xFC);
- 356   2              break;
- 357   2          case SET_MINUTE:
- 358   2              if (interruptCount < (500 / INTERVAL))
- 359   2                  Display(0xFF);
- 360   2              else
- 361   2                  Display(0xE7);
- 362   2              break;
- 363   2          case SET_SECOND:
- 364   2              if (interruptCount < (500 / INTERVAL))
-C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 18:33:45 PAGE 7   
+ 387   2              if (hourlyChimeTimes != 0)
+ 388   2              {
+ 389   3                  if (interruptCount > (500 / INTERVAL))
+ 390   3                      Chime = !Chime;
+ 391   3                  else
+ 392   3                      Chime = 0;
+ 393   3                  if (interruptCount % (500 / INTERVAL) == 0)
+ 394   3                  {
+ 395   4                      hourlyChimeTimes--;
+ 396   4                      Chime = 0;
+ 397   4                  }
+ 398   3              }
+ 399   2          }
+ 400   1      
+ 401   1          switch (mode)
+ 402   1          {
+ 403   2          case SHOW:
+ 404   2              LED8[0] = hour / 10; // 显示小时十位
+ 405   2              LED8[1] = hour % 10; // 显示小时个位
+ 406   2              LED8[2] = 16;
+ 407   2              LED8[3] = minute / 10; // 显示分钟十位
+ 408   2              LED8[4] = minute % 10; // 显示分钟个位
+ 409   2              LED8[5] = 16;
+ 410   2              LED8[6] = second / 10; // 显示秒十位
+ 411   2              LED8[7] = second % 10; // 显示秒个位
+ 412   2              Display(0xFF);
+ 413   2              break;
+ 414   2          case SET:
+ 415   2              if (interruptCount < (500 / INTERVAL))
+ 416   2                  Display(0xFF);
+ 417   2              else
+ 418   2                  Display(0); // 关闭数码管
+ 419   2              break;
+ 420   2          case SET_HOUR:
+ 421   2              if (interruptCount < (500 / INTERVAL))
+ 422   2                  Display(0xFF);
+ 423   2              else
+ 424   2                  Display(0xFC);
+C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 19:23:12 PAGE 8   
 
- 365   2                  Display(0xFF);
- 366   2              else
- 367   2                  Display(0x3F);
- 368   2              break;
- 369   2          case STOPWATCH:
- 370   2              stopwatchMSecond = 0;
- 371   2              stopwatchSecond = 0;
- 372   2              stopwatchMinute = 0;
- 373   2              LED8[0] = stopwatchMinute / 10; // 显示分钟十位
- 374   2              LED8[1] = stopwatchMinute % 10; // 显示分钟个位
- 375   2              LED8[2] = 16;
- 376   2              LED8[3] = stopwatchSecond / 10; // 显示秒十位
- 377   2              LED8[4] = stopwatchSecond % 10; // 显示秒个位
- 378   2              LED8[5] = 16;
- 379   2              LED8[6] = stopwatchMSecond / 100;
- 380   2              LED8[7] = (stopwatchMSecond % 100) / 10;
- 381   2      
- 382   2              Display(0xFF);
- 383   2              break;
- 384   2          case STOPWATCH_START:
- 385   2              stopwatchMSecond += INTERVAL;
- 386   2              if (stopwatchMSecond > 999)
- 387   2              {
- 388   3                  stopwatchMSecond = 0;
- 389   3                  stopwatchSecond++;
- 390   3              }
- 391   2              if (stopwatchSecond > 59)
- 392   2              {
- 393   3                  stopwatchSecond = 0;
- 394   3                  stopwatchMinute++;
- 395   3              }
- 396   2              if (stopwatchMinute > 59)
- 397   2              {
- 398   3                  stopwatchMinute = 0;
- 399   3              }
- 400   2      
- 401   2              LED8[0] = stopwatchMinute / 10; // 显示分钟十位
- 402   2              LED8[1] = stopwatchMinute % 10; // 显示分钟个位
- 403   2              LED8[2] = 16;
- 404   2              LED8[3] = stopwatchSecond / 10; // 显示秒十位
- 405   2              LED8[4] = stopwatchSecond % 10; // 显示秒个位
- 406   2              LED8[5] = 16;
- 407   2              LED8[6] = stopwatchMSecond / 100;
- 408   2              LED8[7] = (stopwatchMSecond % 100) / 10;
- 409   2      
- 410   2              Display(0xFF);
- 411   2              break;
- 412   2          case STOPWATCH_PAUSE:
- 413   2              Display(0xFF);
- 414   2          default:
- 415   2              break;
- 416   2          }
- 417   1      }
- 418          
- 419          void Init()
- 420          {
- 421   1          mode = SHOW;
- 422   1          hourlyChime = 1;
- 423   1          Chime = 0;
- 424   1      
- 425   1          EA = 1;      // 开启总中断
- 426   1          IT0 = 1;     // 设置外部中断0为边沿触发方式
-C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 18:33:45 PAGE 8   
+ 425   2              break;
+ 426   2          case SET_MINUTE:
+ 427   2              if (interruptCount < (500 / INTERVAL))
+ 428   2                  Display(0xFF);
+ 429   2              else
+ 430   2                  Display(0xE7);
+ 431   2              break;
+ 432   2          case SET_SECOND:
+ 433   2              if (interruptCount < (500 / INTERVAL))
+ 434   2                  Display(0xFF);
+ 435   2              else
+ 436   2                  Display(0x3F);
+ 437   2              break;
+ 438   2          case STOPWATCH:
+ 439   2              stopwatchMSecond = 0;
+ 440   2              stopwatchSecond = 0;
+ 441   2              stopwatchMinute = 0;
+ 442   2              LED8[0] = stopwatchMinute / 10; // 显示分钟十位
+ 443   2              LED8[1] = stopwatchMinute % 10; // 显示分钟个位
+ 444   2              LED8[2] = 16;
+ 445   2              LED8[3] = stopwatchSecond / 10; // 显示秒十位
+ 446   2              LED8[4] = stopwatchSecond % 10; // 显示秒个位
+ 447   2              LED8[5] = 16;
+ 448   2              LED8[6] = stopwatchMSecond / 100;
+ 449   2              LED8[7] = (stopwatchMSecond % 100) / 10;
+ 450   2      
+ 451   2              Display(0xFF);
+ 452   2              break;
+ 453   2          case STOPWATCH_START:
+ 454   2              stopwatchMSecond += INTERVAL;
+ 455   2              if (stopwatchMSecond > 999)
+ 456   2              {
+ 457   3                  stopwatchMSecond = 0;
+ 458   3                  stopwatchSecond++;
+ 459   3              }
+ 460   2              if (stopwatchSecond > 59)
+ 461   2              {
+ 462   3                  stopwatchSecond = 0;
+ 463   3                  stopwatchMinute++;
+ 464   3              }
+ 465   2              if (stopwatchMinute > 59)
+ 466   2              {
+ 467   3                  stopwatchMinute = 0;
+ 468   3              }
+ 469   2      
+ 470   2              LED8[0] = stopwatchMinute / 10; // 显示分钟十位
+ 471   2              LED8[1] = stopwatchMinute % 10; // 显示分钟个位
+ 472   2              LED8[2] = 16;
+ 473   2              LED8[3] = stopwatchSecond / 10; // 显示秒十位
+ 474   2              LED8[4] = stopwatchSecond % 10; // 显示秒个位
+ 475   2              LED8[5] = 16;
+ 476   2              LED8[6] = stopwatchMSecond / 100;
+ 477   2              LED8[7] = (stopwatchMSecond % 100) / 10;
+ 478   2      
+ 479   2              Display(0xFF);
+ 480   2              break;
+ 481   2          case STOPWATCH_PAUSE:
+ 482   2              Display(0xFF);
+ 483   2          case ALARMCLOCK:
+ 484   2              LED8[3] = alarmHour / 10;
+ 485   2              LED8[4] = alarmHour % 10;
+ 486   2              LED8[5] = 16;
+C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 19:23:12 PAGE 9   
 
- 427   1          EX0 = 1;     // 允许外部中断0
- 428   1          IT1 = 1;     // 设置外部中断1为边沿触发方式
- 429   1          EX1 = 1;     // 允许外部中断1
- 430   1          PT0 = 1;     // 计时器0中断优先级为最高
- 431   1          TMOD = 0x01; // 设置计时器0工作在方式1
- 432   1          ET0 = 1;     // 允许计时器0中断
- 433   1          TR0 = 1;     // 启动计时器
- 434   1          TH0 = (65536 - INTERVAL * 1000) / 256;
- 435   1          TL0 = (65536 - INTERVAL * 1000) % 256;
- 436   1      }
- 437          
- 438          void main()
- 439          {
- 440   1          Init();
- 441   1          while (1)
- 442   1          {
- 443   2              ;
- 444   2          }
- 445   1      }
- 446          
- 447          // 向HC595发送一个字节
- 448          void SEG_Send595OneByte(unsigned char ucData)
- 449          {
- 450   1          unsigned char i;
- 451   1      
- 452   1          for (i = 0; i < 8; i++) // 8位数据依次写入，先写最低位
- 453   1          {
- 454   2              SEG_DS = (ucData & 0x80); // 先读入高位   x&0x80;
- 455   2              SEG_SHCP = 0;
- 456   2              SEG_SHCP = 1;
- 457   2              SEG_SHCP = 0; // SHCP引脚的上升沿移入数据
- 458   2              ucData <<= 1; // 数据左移
- 459   2          }
- 460   1      }
- 461          
- 462          /*******************************************************
- 463          函数功能：在指定位置显示一个数据
- 464          参数说明：Data是要显示的数据，Addr是在第几位显示。
- 465          
- 466          Addr取值范围是0~9。
- 467          Addr=0~7时，选择的是显示在第几位数码管上;
- 468          Addr=8  时，同时选中8位数码管，即打开所有数码管
- 469          Addr=9  时，关闭8位数码管
- 470          
- 471          8位数码管，左数依次为第0位，第1位...第7位。
- 472          
- 473          *******************************************************/
- 474          void DisplayOneCharOnAddr(unsigned char Data, unsigned char Addr)
- 475          {
- 476   1          SEG_Send595OneByte(Seg_Addr[Addr]); // 显示在哪一个数码管上
- 477   1          SEG_Send595OneByte(Seg_Data[Data]); // 显示的数据
- 478   1          SEG_STCP = 0;
- 479   1          SEG_STCP = 1; // STCP引脚的上升沿更新数据
- 480   1          SEG_STCP = 0;
- 481   1      }
+ 487   2              LED8[6] = alarmMinute / 10;
+ 488   2              LED8[7] = alarmMinute % 10;
+ 489   2              if (alarm)
+ 490   2              {
+ 491   3                  LED8[0] = 17;
+ 492   3                  LED8[1] = 17;
+ 493   3                  LED8[2] = 17;
+ 494   3              }
+ 495   2              else
+ 496   2              {
+ 497   3                  LED8[0] = 0;
+ 498   3                  LED8[1] = 15;
+ 499   3                  LED8[2] = 15;
+ 500   3              }
+ 501   2              Display(0xFF);
+ 502   2              break;
+ 503   2          case ALARMCLOCK_HOUR:
+ 504   2              if (interruptCount < (500 / INTERVAL))
+ 505   2                  Display(0xFF);
+ 506   2              else
+ 507   2                  Display(0xE7);
+ 508   2              break;
+ 509   2          case ALARMCLOCK_MINUTE:
+ 510   2              if (interruptCount < (500 / INTERVAL))
+ 511   2                  Display(0xFF);
+ 512   2              else
+ 513   2                  Display(0x3F);
+ 514   2              break;
+ 515   2          default:
+ 516   2              break;
+ 517   2          }
+ 518   1      }
+ 519          
+ 520          void Init()
+ 521          {
+ 522   1          mode = SHOW;
+ 523   1          hourlyChime = 1;
+ 524   1          Chime = 0;
+ 525   1      
+ 526   1          EA = 1;      // 开启总中断
+ 527   1          IT0 = 1;     // 设置外部中断0为边沿触发方式
+ 528   1          EX0 = 1;     // 允许外部中断0
+ 529   1          IT1 = 1;     // 设置外部中断1为边沿触发方式
+ 530   1          EX1 = 1;     // 允许外部中断1
+ 531   1          PT0 = 1;     // 计时器0中断优先级为最高
+ 532   1          TMOD = 0x01; // 设置计时器0工作在方式1
+ 533   1          ET0 = 1;     // 允许计时器0中断
+ 534   1          TR0 = 1;     // 启动计时器
+ 535   1          TH0 = (65536 - INTERVAL * 1000) / 256;
+ 536   1          TL0 = (65536 - INTERVAL * 1000) % 256;
+ 537   1      }
+ 538          
+ 539          void main()
+ 540          {
+ 541   1          Init();
+ 542   1          while (1)
+ 543   1          {
+ 544   2              ;
+ 545   2          }
+ 546   1      }
+ 547          
+ 548          // 向HC595发送一个字节
+C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 19:23:12 PAGE 10  
+
+ 549          void SEG_Send595OneByte(unsigned char ucData)
+ 550          {
+ 551   1          unsigned char i;
+ 552   1      
+ 553   1          for (i = 0; i < 8; i++) // 8位数据依次写入，先写最低位
+ 554   1          {
+ 555   2              SEG_DS = (ucData & 0x80); // 先读入高位   x&0x80;
+ 556   2              SEG_SHCP = 0;
+ 557   2              SEG_SHCP = 1;
+ 558   2              SEG_SHCP = 0; // SHCP引脚的上升沿移入数据
+ 559   2              ucData <<= 1; // 数据左移
+ 560   2          }
+ 561   1      }
+ 562          
+ 563          /*******************************************************
+ 564          函数功能：在指定位置显示一个数据
+ 565          参数说明：Data是要显示的数据，Addr是在第几位显示。
+ 566          
+ 567          Addr取值范围是0~9。
+ 568          Addr=0~7时，选择的是显示在第几位数码管上;
+ 569          Addr=8  时，同时选中8位数码管，即打开所有数码管
+ 570          Addr=9  时，关闭8位数码管
+ 571          
+ 572          8位数码管，左数依次为第0位，第1位...第7位。
+ 573          
+ 574          *******************************************************/
+ 575          void DisplayOneCharOnAddr(unsigned char Data, unsigned char Addr)
+ 576          {
+ 577   1          SEG_Send595OneByte(Seg_Addr[Addr]); // 显示在哪一个数码管上
+ 578   1          SEG_Send595OneByte(Seg_Data[Data]); // 显示的数据
+ 579   1          SEG_STCP = 0;
+ 580   1          SEG_STCP = 1; // STCP引脚的上升沿更新数据
+ 581   1          SEG_STCP = 0;
+ 582   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   1127    ----
+   CODE SIZE        =   1526    ----
    CONSTANT SIZE    =     28    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-C51 COMPILER V9.01   CLOCK                                                                 09/14/2023 18:33:45 PAGE 9   
-
-   DATA SIZE        =     23       3
+   DATA SIZE        =     26       5
    IDATA SIZE       =   ----    ----
-   BIT SIZE         =      3    ----
+   BIT SIZE         =      4    ----
 END OF MODULE INFORMATION.
 
 
