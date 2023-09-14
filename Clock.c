@@ -4,7 +4,9 @@
 
 #define INIT_HOUR 23   // 初始化小时
 #define INIT_MINUTE 59 // 初始化分钟
-#define INIT_SECOND 20 // 初始化秒
+#define INIT_SECOND 55 // 初始化秒
+
+#define HOURLYCHIMETIMES 3 // 整点响铃次数
 
 unsigned char hour = INIT_HOUR;     // 初始化小时
 unsigned char minute = INIT_MINUTE; // 初始化分钟
@@ -28,9 +30,13 @@ unsigned char LED8[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 unsigned int interruptCount = 0; // 中断次数
 
+bit hourlyChime = 1; // 整点报时功能，1表示开，0表示关
+
 sbit SEG_DS = P2 ^ 0;   // 74HC595芯片的数据引脚
 sbit SEG_SHCP = P2 ^ 1; // 74HC595芯片的控制引脚，上升沿移入数据
 sbit SEG_STCP = P2 ^ 2; // 74HC595芯片的控制引脚，上升沿更新数据
+
+sbit Chime = P2 ^ 3; // 蜂鸣器
 
 unsigned char code Seg_Data[] = {
     // 共阳数码管的编码，并将数据定义在CODE区
@@ -81,7 +87,7 @@ bit button = 0;
 sbit P3_2 = P3 ^ 2;
 sbit P3_3 = P3 ^ 3;
 
-void Check() // 判断按键是长按还是短按。
+void Check() // 判断按键是长按还是短按
 {
     checkCount++;
     if (checkCount < 10 / INTERVAL) // 10ms延迟去抖动
@@ -189,6 +195,9 @@ void LongPress() // 长按处理程序
     {
         switch (mode)
         {
+        case SHOW:
+            hourlyChime = !hourlyChime;
+            break;
         case SET_HOUR:
         case SET_MINUTE:
         case SET_SECOND:
@@ -251,14 +260,17 @@ void Display(unsigned char enable)
     displayIndex %= 8; // 显示下一个数码管
 }
 
+unsigned char hourlyChimeTimes = 0;
+
+// 定时器0中断服务函数
 void Timer0() interrupt 1
-{ // 定时器0中断服务函数
+{
     interruptCount++;
 
     TH0 = (65536 - INTERVAL * 1000) / 256;
     TL0 = (65536 - INTERVAL * 1000) % 256;
 
-    if (interruptCount == 1000 / INTERVAL)
+    if (interruptCount == (1000 / INTERVAL))
     { // 1秒
         interruptCount = 0;
         SecondIncrease();
@@ -269,15 +281,27 @@ void Timer0() interrupt 1
         Check();
     }
 
-    if (shortOrLang != 0)
+    if (shortOrLang == 1)
     {
-        if (shortOrLang == 1)
+        ShortPress();
+    }
+    else if (shortOrLang == 2)
+    {
+        LongPress();
+    }
+
+    if (mode == SHOW && hourlyChime == 1)
+    {
+        if (hourlyChimeTimes == 0 && minute == 0 && second == 0)
+            hourlyChimeTimes = 2 * (HOURLYCHIMETIMES + 1); // 我也不知道这里为什么要加一，但事实就是它会响HOURLYCHIMETIMES-1次，所以要加一补上。
+        if (hourlyChimeTimes != 0)
         {
-            ShortPress();
-        }
-        else
-        {
-            LongPress();
+            if (interruptCount > (500 / INTERVAL))
+                Chime = !Chime;
+            else
+                Chime = 0;
+            if (interruptCount % (500 / INTERVAL) == 0)
+                hourlyChimeTimes--;
         }
     }
 
@@ -326,6 +350,8 @@ void Timer0() interrupt 1
 void Init()
 {
     mode = SHOW;
+    hourlyChime = 1;
+    Chime = 0;
 
     EA = 1;      // 开启总中断
     IT0 = 1;     // 设置外部中断0为边沿触发方式
