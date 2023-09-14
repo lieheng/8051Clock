@@ -14,16 +14,18 @@ unsigned char second = INIT_SECOND; // 初始化秒
 
 enum MODE
 {
-    SHOW,
-    SET,
-    SET_HOUR,
-    SET_MINUTE,
-    SET_SECOND,
-    STOPWATCH,
-    ALARMCLOCK
+    SHOW,            // 显示模式
+    SET,             // 设置模式
+    SET_HOUR,        // 设置时模式
+    SET_MINUTE,      // 设置分模式
+    SET_SECOND,      // 设置秒模式
+    STOPWATCH,       // 秒表模式
+    STOPWATCH_START, // 秒表计时模式
+    STOPWATCH_PAUSE, // 秒表暂停模式
+    ALARMCLOCK       // 设置闹钟
 };
 
-unsigned char mode = SHOW; // 模式，0为显示模式，1为设置模式，2为设置时模式，3为设置分模式，4为设置秒模式
+unsigned char mode = SHOW; // 模式
 
 unsigned char displayIndex = 0;
 unsigned char LED8[8] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -120,6 +122,9 @@ void ShortPress() // 短按处理程序
             mode = SET;
             break;
         case SET:
+            mode = STOPWATCH;
+            break;
+        case STOPWATCH:
             mode = SHOW;
             break;
         case SET_HOUR:
@@ -137,30 +142,38 @@ void ShortPress() // 短按处理程序
     }
     else
     {
-        unsigned char tmp_hour = LED8[0] * 10 + LED8[1];
-        unsigned char tmp_minute = LED8[3] * 10 + LED8[4];
-        unsigned char tmp_second = LED8[6] * 10 + LED8[7];
+        unsigned char setHour = LED8[0] * 10 + LED8[1];
+        unsigned char setMinute = LED8[3] * 10 + LED8[4];
+        unsigned char setSecond = LED8[6] * 10 + LED8[7];
         switch (mode)
         {
         case SET_HOUR:
-            tmp_hour++;
-            tmp_hour %= 24;
-            LED8[0] = tmp_hour / 10;
-            LED8[1] = tmp_hour % 10;
+            setHour++;
+            setHour %= 24;
+            LED8[0] = setHour / 10;
+            LED8[1] = setHour % 10;
             break;
         case SET_MINUTE:
-            tmp_minute++;
-            tmp_minute %= 60;
-            LED8[3] = tmp_minute / 10;
-            LED8[4] = tmp_minute % 10;
+            setMinute++;
+            setMinute %= 60;
+            LED8[3] = setMinute / 10;
+            LED8[4] = setMinute % 10;
             break;
         case SET_SECOND:
-            tmp_second++;
-            tmp_second %= 60;
-            LED8[6] = tmp_second / 10;
-            LED8[7] = tmp_second % 10;
+            setSecond++;
+            setSecond %= 60;
+            LED8[6] = setSecond / 10;
+            LED8[7] = setSecond % 10;
             break;
-
+        case STOPWATCH:
+            mode = STOPWATCH_START;
+            break;
+        case STOPWATCH_START:
+            mode = STOPWATCH_PAUSE;
+            break;
+        case STOPWATCH_PAUSE:
+            mode = STOPWATCH_START;
+            break;
         default:
             break;
         }
@@ -203,6 +216,9 @@ void LongPress() // 长按处理程序
         case SET_SECOND:
             mode = SHOW;
             break;
+        case STOPWATCH_PAUSE:
+            mode = STOPWATCH;
+            break;
         default:
             break;
         }
@@ -232,17 +248,17 @@ void Int1() interrupt 2
 void SecondIncrease()
 {
     second++;
-    if (second == 60)
+    if (second > 59)
     {
         second = 0;
         minute++;
     }
-    if (minute == 60)
+    if (minute > 59)
     {
         minute = 0;
         hour++;
     }
-    if (hour == 24)
+    if (hour > 23)
     {
         hour = 0;
     }
@@ -262,9 +278,14 @@ void Display(unsigned char enable)
 
 unsigned char hourlyChimeTimes = 0;
 
+unsigned int stopwatchMSecond = 0;
+unsigned char stopwatchSecond = 0;
+unsigned char stopwatchMinute = 0;
+
 // 定时器0中断服务函数
 void Timer0() interrupt 1
 {
+
     interruptCount++;
 
     TH0 = (65536 - INTERVAL * 1000) / 256;
@@ -342,6 +363,51 @@ void Timer0() interrupt 1
         else
             Display(0x3F);
         break;
+    case STOPWATCH:
+        stopwatchMSecond = 0;
+        stopwatchSecond = 0;
+        stopwatchMinute = 0;
+        LED8[0] = stopwatchMinute / 10; // 显示分钟十位
+        LED8[1] = stopwatchMinute % 10; // 显示分钟个位
+        LED8[2] = 16;
+        LED8[3] = stopwatchSecond / 10; // 显示秒十位
+        LED8[4] = stopwatchSecond % 10; // 显示秒个位
+        LED8[5] = 16;
+        LED8[6] = stopwatchMSecond / 100;
+        LED8[7] = (stopwatchMSecond % 100) / 10;
+
+        Display(0xFF);
+        break;
+    case STOPWATCH_START:
+        stopwatchMSecond++;
+        if (stopwatchMSecond > 999)
+        {
+            stopwatchMSecond = 0;
+            stopwatchSecond++;
+        }
+        if (stopwatchSecond > 59)
+        {
+            stopwatchSecond = 0;
+            stopwatchMinute++;
+        }
+        if (stopwatchMinute > 59)
+        {
+            stopwatchMinute = 0;
+        }
+
+        LED8[0] = stopwatchMinute / 10; // 显示分钟十位
+        LED8[1] = stopwatchMinute % 10; // 显示分钟个位
+        LED8[2] = 16;
+        LED8[3] = stopwatchSecond / 10; // 显示秒十位
+        LED8[4] = stopwatchSecond % 10; // 显示秒个位
+        LED8[5] = 16;
+        LED8[6] = stopwatchMSecond / 100;
+        LED8[7] = (stopwatchMSecond % 100) / 10;
+
+        Display(0xFF);
+        break;
+    case STOPWATCH_PAUSE:
+        Display(0xFF);
     default:
         break;
     }
