@@ -1,4 +1,4 @@
-BL51 BANKED LINKER/LOCATER V6.22                                                        09/14/2023  19:23:12  PAGE 1
+BL51 BANKED LINKER/LOCATER V6.22                                                        09/14/2023  20:10:43  PAGE 1
 
 
 BL51 BANKED LINKER/LOCATER V6.22, INVOKED BY:
@@ -44,14 +44,14 @@ LINK MAP OF MODULE:  Clock (CLOCK)
             CODE    05AAH     0055H     UNIT         ?C?LIB_CODE
             CODE    05FFH     0043H     UNIT         ?C_INITSEG
             CODE    0642H     0038H     UNIT         ?PR?CHECK?CLOCK
-            CODE    067AH     002BH     UNIT         ?PR?_DISPLAY?CLOCK
-            CODE    06A5H     0025H     UNIT         ?PR?SECONDINCREASE?CLOCK
-            CODE    06CAH     0021H     UNIT         ?PR?INIT?CLOCK
-            CODE    06EBH     001CH     UNIT         ?CO?CLOCK
-            CODE    0707H     001BH     UNIT         ?PR?_DISPLAYONECHARONADDR?CLOCK
-            CODE    0722H     0015H     UNIT         ?PR?_SEG_SEND595ONEBYTE?CLOCK
-            CODE    0737H     0008H     UNIT         ?PR?INT0?CLOCK
-            CODE    073FH     0008H     UNIT         ?PR?INT1?CLOCK
+            CODE    067AH     002CH     UNIT         ?PR?_DISPLAYONECHARONADDR?CLOCK
+            CODE    06A6H     002BH     UNIT         ?PR?_DISPLAY?CLOCK
+            CODE    06D1H     0025H     UNIT         ?PR?SECONDINCREASE?CLOCK
+            CODE    06F6H     001CH     UNIT         ?PR?INIT?CLOCK
+            CODE    0712H     001CH     UNIT         ?CO?CLOCK
+            CODE    072EH     0015H     UNIT         ?PR?_SEG_SEND595ONEBYTE?CLOCK
+            CODE    0743H     0008H     UNIT         ?PR?INT0?CLOCK
+            CODE    074BH     0008H     UNIT         ?PR?INT1?CLOCK
 
 
 
@@ -59,7 +59,7 @@ OVERLAY MAP OF MODULE:   Clock (CLOCK)
 
 
 SEGMENT                                   DATA_GROUP 
-BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  19:23:12  PAGE 2
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  20:10:43  PAGE 2
 
 
   +--> CALLED SEGMENT                   START    LENGTH
@@ -107,29 +107,29 @@ SYMBOL TABLE OF MODULE:  Clock (CLOCK)
   D:0025H         PUBLIC        alarmMinute
   D:0026H         PUBLIC        checkCount
   D:0028H         PUBLIC        LED8
-  C:06A5H         PUBLIC        SecondIncrease
+  C:06D1H         PUBLIC        SecondIncrease
   B:0020H.0       PUBLIC        alarm
   B:0020H.1       PUBLIC        hourlyChime
   D:0030H         PUBLIC        stopwatchMSecond
   B:00B0H.2       PUBLIC        P3_2
-  C:06CAH         PUBLIC        Init
+  C:06F6H         PUBLIC        Init
   B:00B0H.3       PUBLIC        P3_3
   D:0032H         PUBLIC        minute
   D:0033H         PUBLIC        hourlyChimeTimes
   B:0020H.2       PUBLIC        button
   C:0525H         PUBLIC        LongPress
   C:033CH         PUBLIC        ShortPress
-BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  19:23:12  PAGE 3
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  20:10:43  PAGE 3
 
 
   C:0006H         PUBLIC        main
   D:0034H         PUBLIC        mode
-  C:0722H         PUBLIC        _SEG_Send595OneByte
+  C:072EH         PUBLIC        _SEG_Send595OneByte
   D:0035H         PUBLIC        alarmHour
   C:0016H         PUBLIC        Timer0
   D:0089H         PUBLIC        TMOD
   B:0020H.3       PUBLIC        buttonDown
-  C:0707H         PUBLIC        _DisplayOneCharOnAddr
+  C:067AH         PUBLIC        _DisplayOneCharOnAddr
   D:0036H         PUBLIC        hour
   D:0037H         PUBLIC        stopwatchSecond
   B:00A8H.1       PUBLIC        ET0
@@ -143,17 +143,17 @@ SYMBOL TABLE OF MODULE:  Clock (CLOCK)
   B:0088H.4       PUBLIC        TR0
   B:00A0H.0       PUBLIC        SEG_DS
   D:0038H         PUBLIC        stopwatchMinute
-  C:067AH         PUBLIC        _Display
-  C:0737H         PUBLIC        Int0
-  C:073FH         PUBLIC        Int1
+  C:06A6H         PUBLIC        _Display
+  C:0743H         PUBLIC        Int0
+  C:074BH         PUBLIC        Int1
   C:0642H         PUBLIC        Check
   B:00A0H.3       PUBLIC        Chime
   B:00A0H.1       PUBLIC        SEG_SHCP
   D:0039H         PUBLIC        displayIndex
   D:003AH         PUBLIC        shortOrLang
   B:00A0H.2       PUBLIC        SEG_STCP
-  C:06EBH         PUBLIC        Seg_Data
-  C:06FDH         PUBLIC        Seg_Addr
+  C:0712H         PUBLIC        Seg_Data
+  C:0724H         PUBLIC        Seg_Addr
   -------         PROC          CHECK
   C:0642H         LINE#         100
   C:0642H         LINE#         101
@@ -179,7 +179,7 @@ SYMBOL TABLE OF MODULE:  Clock (CLOCK)
   -------         DO            
   D:0008H         SYMBOL        setHour
   D:0009H         SYMBOL        setMinute
-BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  19:23:12  PAGE 4
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  20:10:43  PAGE 4
 
 
   D:000AH         SYMBOL        setSecond
@@ -239,7 +239,7 @@ SYMBOL TABLE OF MODULE:  Clock (CLOCK)
   C:041BH         LINE#         175
   C:041DH         LINE#         176
   C:041DH         LINE#         177
-BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  19:23:12  PAGE 5
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  20:10:43  PAGE 5
 
 
   C:041FH         LINE#         178
@@ -299,7 +299,7 @@ SYMBOL TABLE OF MODULE:  Clock (CLOCK)
   C:0543H         LINE#         233
   C:054DH         LINE#         234
   C:0557H         LINE#         235
-BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  19:23:12  PAGE 6
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  20:10:43  PAGE 6
 
 
   C:0561H         LINE#         237
@@ -343,58 +343,58 @@ SYMBOL TABLE OF MODULE:  Clock (CLOCK)
   C:05A9H         LINE#         278
   -------         ENDPROC       LONGPRESS
   -------         PROC          INT0
-  C:0737H         LINE#         280
-  C:0737H         LINE#         282
-  C:073AH         LINE#         283
-  C:073AH         LINE#         284
-  C:073CH         LINE#         285
-  C:073EH         LINE#         286
-  C:073EH         LINE#         287
+  C:0743H         LINE#         280
+  C:0743H         LINE#         282
+  C:0746H         LINE#         283
+  C:0746H         LINE#         284
+  C:0748H         LINE#         285
+  C:074AH         LINE#         286
+  C:074AH         LINE#         287
   -------         ENDPROC       INT0
   -------         PROC          INT1
-  C:073FH         LINE#         289
-  C:073FH         LINE#         291
-  C:0742H         LINE#         292
-  C:0742H         LINE#         293
-  C:0744H         LINE#         294
-  C:0746H         LINE#         295
-  C:0746H         LINE#         296
-BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  19:23:12  PAGE 7
+  C:074BH         LINE#         289
+  C:074BH         LINE#         291
+  C:074EH         LINE#         292
+  C:074EH         LINE#         293
+  C:0750H         LINE#         294
+  C:0752H         LINE#         295
+  C:0752H         LINE#         296
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  20:10:43  PAGE 7
 
 
   -------         ENDPROC       INT1
   -------         PROC          SECONDINCREASE
-  C:06A5H         LINE#         298
-  C:06A5H         LINE#         299
-  C:06A5H         LINE#         300
-  C:06A7H         LINE#         301
-  C:06AEH         LINE#         302
-  C:06AEH         LINE#         303
-  C:06B1H         LINE#         304
-  C:06B3H         LINE#         305
-  C:06B3H         LINE#         306
-  C:06BAH         LINE#         307
-  C:06BAH         LINE#         308
-  C:06BDH         LINE#         309
-  C:06BFH         LINE#         310
-  C:06BFH         LINE#         311
-  C:06C6H         LINE#         312
-  C:06C6H         LINE#         313
-  C:06C9H         LINE#         314
-  C:06C9H         LINE#         315
+  C:06D1H         LINE#         298
+  C:06D1H         LINE#         299
+  C:06D1H         LINE#         300
+  C:06D3H         LINE#         301
+  C:06DAH         LINE#         302
+  C:06DAH         LINE#         303
+  C:06DDH         LINE#         304
+  C:06DFH         LINE#         305
+  C:06DFH         LINE#         306
+  C:06E6H         LINE#         307
+  C:06E6H         LINE#         308
+  C:06E9H         LINE#         309
+  C:06EBH         LINE#         310
+  C:06EBH         LINE#         311
+  C:06F2H         LINE#         312
+  C:06F2H         LINE#         313
+  C:06F5H         LINE#         314
+  C:06F5H         LINE#         315
   -------         ENDPROC       SECONDINCREASE
   -------         PROC          _DISPLAY
   D:0007H         SYMBOL        enable
-  C:067AH         LINE#         317
-  C:067AH         LINE#         318
-  C:067AH         LINE#         319
-  C:0687H         LINE#         320
-  C:068AH         LINE#         321
-  C:068DH         LINE#         322
-  C:0698H         LINE#         324
-  C:069FH         LINE#         325
-  C:06A1H         LINE#         326
-  C:06A4H         LINE#         327
+  C:06A6H         LINE#         317
+  C:06A6H         LINE#         318
+  C:06A6H         LINE#         319
+  C:06B3H         LINE#         320
+  C:06B6H         LINE#         321
+  C:06B9H         LINE#         322
+  C:06C4H         LINE#         324
+  C:06CBH         LINE#         325
+  C:06CDH         LINE#         326
+  C:06D0H         LINE#         327
   -------         ENDPROC       _DISPLAY
   -------         PROC          TIMER0
   C:0016H         LINE#         337
@@ -419,7 +419,7 @@ SYMBOL TABLE OF MODULE:  Clock (CLOCK)
   C:0069H         LINE#         362
   C:006CH         LINE#         363
   C:006CH         LINE#         365
-BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  19:23:12  PAGE 8
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  20:10:43  PAGE 8
 
 
   C:0073H         LINE#         366
@@ -479,7 +479,7 @@ SYMBOL TABLE OF MODULE:  Clock (CLOCK)
   C:01A9H         LINE#         426
   C:01A9H         LINE#         427
   C:01B4H         LINE#         428
-BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  19:23:12  PAGE 9
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  20:10:43  PAGE 9
 
 
   C:01B9H         LINE#         430
@@ -539,7 +539,7 @@ SYMBOL TABLE OF MODULE:  Clock (CLOCK)
   C:02D6H         LINE#         488
   C:02DFH         LINE#         489
   C:02E2H         LINE#         490
-BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  19:23:12  PAGE 10
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  20:10:43  PAGE 10
 
 
   C:02E2H         LINE#         491
@@ -569,63 +569,63 @@ SYMBOL TABLE OF MODULE:  Clock (CLOCK)
   C:0321H         LINE#         518
   -------         ENDPROC       TIMER0
   -------         PROC          INIT
-  C:06CAH         LINE#         520
-  C:06CAH         LINE#         521
-  C:06CAH         LINE#         522
-  C:06CDH         LINE#         523
-  C:06CFH         LINE#         524
-  C:06D1H         LINE#         526
-  C:06D3H         LINE#         527
-  C:06D5H         LINE#         528
-  C:06D7H         LINE#         529
-  C:06D9H         LINE#         530
-  C:06DBH         LINE#         531
-  C:06DDH         LINE#         532
-  C:06E0H         LINE#         533
-  C:06E2H         LINE#         534
-  C:06E4H         LINE#         535
-  C:06E7H         LINE#         536
-  C:06EAH         LINE#         537
+  C:06F6H         LINE#         520
+  C:06F6H         LINE#         521
+  C:06F6H         LINE#         522
+  C:06F8H         LINE#         524
+  C:06FAH         LINE#         525
+  C:06FCH         LINE#         526
+  C:06FEH         LINE#         527
+  C:0700H         LINE#         528
+  C:0702H         LINE#         529
+  C:0704H         LINE#         530
+  C:0707H         LINE#         531
+  C:0709H         LINE#         532
+  C:070BH         LINE#         533
+  C:070EH         LINE#         534
+  C:0711H         LINE#         535
   -------         ENDPROC       INIT
   -------         PROC          MAIN
+  C:0006H         LINE#         537
+  C:0006H         LINE#         538
   C:0006H         LINE#         539
-  C:0006H         LINE#         540
-  C:0006H         LINE#         541
-  C:0009H         LINE#         542
+  C:0009H         LINE#         540
+  C:0009H         LINE#         541
   C:0009H         LINE#         543
-  C:0009H         LINE#         545
   -------         ENDPROC       MAIN
   -------         PROC          _SEG_SEND595ONEBYTE
   D:0007H         SYMBOL        ucData
   -------         DO            
   D:0006H         SYMBOL        i
-BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  19:23:12  PAGE 11
-
-
   -------         ENDDO         
-  C:0722H         LINE#         549
-  C:0722H         LINE#         550
-  C:0722H         LINE#         553
-  C:0724H         LINE#         554
-  C:0724H         LINE#         555
-  C:0728H         LINE#         556
-  C:072AH         LINE#         557
-  C:072CH         LINE#         558
-  C:072EH         LINE#         559
-  C:0732H         LINE#         560
-  C:0736H         LINE#         561
+  C:072EH         LINE#         547
+BL51 BANKED LINKER/LOCATER V6.22                                                      09/14/2023  20:10:43  PAGE 11
+
+
+  C:072EH         LINE#         548
+  C:072EH         LINE#         551
+  C:0730H         LINE#         552
+  C:0730H         LINE#         553
+  C:0734H         LINE#         554
+  C:0736H         LINE#         555
+  C:0738H         LINE#         556
+  C:073AH         LINE#         557
+  C:073EH         LINE#         558
+  C:0742H         LINE#         559
   -------         ENDPROC       _SEG_SEND595ONEBYTE
   -------         PROC          _DISPLAYONECHARONADDR
   D:0004H         SYMBOL        Data
   D:0005H         SYMBOL        Addr
-  C:0707H         LINE#         575
-  C:0709H         LINE#         576
-  C:0709H         LINE#         577
-  C:0712H         LINE#         578
-  C:071BH         LINE#         579
-  C:071DH         LINE#         580
-  C:071FH         LINE#         581
-  C:0721H         LINE#         582
+  C:067AH         LINE#         573
+  C:067CH         LINE#         574
+  C:067CH         LINE#         575
+  C:0685H         LINE#         576
+  C:068DH         LINE#         577
+  C:0696H         LINE#         579
+  C:069FH         LINE#         580
+  C:06A1H         LINE#         581
+  C:06A3H         LINE#         582
+  C:06A5H         LINE#         583
   -------         ENDPROC       _DISPLAYONECHARONADDR
   -------         ENDMOD        CLOCK
 
@@ -633,5 +633,5 @@ SYMBOL TABLE OF MODULE:  Clock (CLOCK)
   C:05AAH         PUBLIC        ?C?UIDIV
   -------         ENDMOD        ?C?UIDIV
 
-Program Size: data=40.4 xdata=0 code=1858
+Program Size: data=40.4 xdata=0 code=1870
 LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -3,7 +3,7 @@
 #define INTERVAL 1 // 间隔1毫秒
 
 #define INIT_HOUR 23   // 初始化小时
-#define INIT_MINUTE 58 // 初始化分钟
+#define INIT_MINUTE 59 // 初始化分钟
 #define INIT_SECOND 58 // 初始化秒
 
 #define HOURLYCHIMETIMES 3 // 整点响铃次数
@@ -38,8 +38,8 @@ unsigned char LED8[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
 unsigned int interruptCount = 0; // 中断次数
 
-bit hourlyChime = 1; // 整点报时功能，1表示开，0表示关
-bit alarm = 1;       // 闹钟功能，1表示响，0表示不响
+bit hourlyChime = 0; // 整点报时功能，1表示开，0表示关
+bit alarm = 0;       // 闹钟功能，1表示响，0表示不响
 
 sbit SEG_DS = P2 ^ 0;   // 74HC595芯片的数据引脚
 sbit SEG_SHCP = P2 ^ 1; // 74HC595芯片的控制引脚，上升沿移入数据
@@ -66,7 +66,7 @@ unsigned char code Seg_Data[] = {
     0x86, /*E*/
     0x8E, /*F*/
     0xBF, /*-*/
-    0xFF, /*OFFF*/
+    0xFF, /*OFF*/
 };
 
 unsigned char code Seg_Addr[] = {
@@ -519,8 +519,6 @@ void Timer0() interrupt 1
 
 void Init()
 {
-    mode = SHOW;
-    hourlyChime = 1;
     Chime = 0;
 
     EA = 1;      // 开启总中断
@@ -575,7 +573,10 @@ Addr=9  时，关闭8位数码管
 void DisplayOneCharOnAddr(unsigned char Data, unsigned char Addr)
 {
     SEG_Send595OneByte(Seg_Addr[Addr]); // 显示在哪一个数码管上
-    SEG_Send595OneByte(Seg_Data[Data]); // 显示的数据
+    if (hourlyChime == 1 && displayIndex == 7)
+        SEG_Send595OneByte(Seg_Data[Data] & 0x7F); // 显示的数据
+    else
+        SEG_Send595OneByte(Seg_Data[Data]); // 显示的数据
     SEG_STCP = 0;
     SEG_STCP = 1; // STCP引脚的上升沿更新数据
     SEG_STCP = 0;
