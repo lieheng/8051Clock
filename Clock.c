@@ -59,6 +59,66 @@ void DisplayOneCharOnAddr(unsigned char, unsigned char Addr);
 void SEG_Send595OneByte(unsigned char ucData); // 向74HC595写入一个8位的数据
 void SecondIncrease();
 
+unsigned int checkCount = 0;
+unsigned char shortOrLang = 0; // 0表示无效，1表示短按，2表示长按
+
+bit buttonDown = 0;
+bit button = 0;
+
+sbit P3_2 = P3 ^ 2;
+sbit P3_3 = P3 ^ 3;
+
+void Check() // 判断按键是长按还是短按。
+{
+    checkCount++;
+    if (checkCount < 10 / INTERVAL) // 10ms延迟去抖动
+        return;
+
+    if (checkCount > 1010 / INTERVAL) // 如果大于一秒，为长按
+    {
+        shortOrLang = 2;
+        checkCount = 0;
+        buttonDown = 0;
+    }
+    else
+    {
+        if ((button == 0 && P3_2 == 1) || (button == 1 && P3_3 == 1))
+        {
+            shortOrLang = 1;
+            checkCount = 0;
+            buttonDown = 0;
+        }
+    }
+}
+
+void ShortPress() // 短按处理程序
+{
+    shortOrLang = 0;
+}
+
+void LongPress() // 长按处理程序
+{
+    shortOrLang = 0;
+}
+
+void Int0() interrupt 0
+{
+    if (buttonDown == 0)
+    {
+        buttonDown = 1;
+        button = 0;
+    }
+}
+
+void Int1() interrupt 2
+{
+    if (buttonDown == 0)
+    {
+        buttonDown = 1;
+        button = 1;
+    }
+}
+
 void SecondIncrease()
 {
     second++;
@@ -98,6 +158,23 @@ void Timer0() interrupt 1
         SecondIncrease();
     }
 
+    if (buttonDown == 1)
+    {
+        Check();
+    }
+
+    if (shortOrLang != 0)
+    {
+        if (shortOrLang == 1)
+        {
+            ShortPress();
+        }
+        else
+        {
+            LongPress();
+        }
+    }
+
     LED8[0] = hour / 10; // 显示小时十位
     LED8[1] = hour % 10; // 显示小时个位
     LED8[2] = 16;
@@ -112,8 +189,12 @@ void Timer0() interrupt 1
 
 void Init()
 {
-    EA = 1; // 开启总中断
-
+    EA = 1;      // 开启总中断
+    IT0 = 1;     // 设置外部中断0为边沿触发方式
+    EX0 = 1;     // 允许外部中断0
+    IT1 = 1;     // 设置外部中断1为边沿触发方式
+    EX1 = 1;     // 允许外部中断1
+    PT0 = 1;     // 计时器0中断优先级为最高
     TMOD = 0x01; // 设置计时器0工作在方式1
     ET0 = 1;     // 允许计时器0中断
     TR0 = 1;     // 启动计时器
