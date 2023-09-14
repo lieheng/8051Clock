@@ -10,6 +10,19 @@ unsigned char hour = INIT_HOUR;     // 初始化小时
 unsigned char minute = INIT_MINUTE; // 初始化分钟
 unsigned char second = INIT_SECOND; // 初始化秒
 
+enum MODE
+{
+    SHOW,
+    SET,
+    SET_HOUR,
+    SET_MINUTE,
+    SET_SECOND,
+    STOPWATCH,
+    ALARMCLOCK
+};
+
+unsigned char mode = SHOW; // 模式，0为显示模式，1为设置模式，2为设置时模式，3为设置分模式，4为设置秒模式
+
 unsigned char displayIndex = 0;
 unsigned char LED8[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -93,11 +106,99 @@ void Check() // 判断按键是长按还是短按。
 
 void ShortPress() // 短按处理程序
 {
+    if (button == 0) // 如果按的是键A
+    {
+        switch (mode)
+        {
+        case SHOW:
+            mode = SET;
+            break;
+        case SET:
+            mode = SHOW;
+            break;
+        case SET_HOUR:
+            mode = SET_MINUTE;
+            break;
+        case SET_MINUTE:
+            mode = SET_SECOND;
+            break;
+        case SET_SECOND:
+            mode = SET_HOUR;
+            break;
+        default:
+            break;
+        }
+    }
+    else
+    {
+        unsigned char tmp_hour = LED8[0] * 10 + LED8[1];
+        unsigned char tmp_minute = LED8[3] * 10 + LED8[4];
+        unsigned char tmp_second = LED8[6] * 10 + LED8[7];
+        switch (mode)
+        {
+        case SET_HOUR:
+            tmp_hour++;
+            tmp_hour %= 24;
+            LED8[0] = tmp_hour / 10;
+            LED8[1] = tmp_hour % 10;
+            break;
+        case SET_MINUTE:
+            tmp_minute++;
+            tmp_minute %= 60;
+            LED8[3] = tmp_minute / 10;
+            LED8[4] = tmp_minute % 10;
+            break;
+        case SET_SECOND:
+            tmp_second++;
+            tmp_second %= 60;
+            LED8[6] = tmp_second / 10;
+            LED8[7] = tmp_second % 10;
+            break;
+
+        default:
+            break;
+        }
+    }
+
     shortOrLang = 0;
 }
 
 void LongPress() // 长按处理程序
 {
+    if (button == 0) // 如果按的是键A
+    {
+        switch (mode)
+        {
+        case SET:
+            mode = SET_HOUR;
+            break;
+        case SET_HOUR:
+        case SET_MINUTE:
+        case SET_SECOND:
+            hour = LED8[0] * 10 + LED8[1];
+            minute = LED8[3] * 10 + LED8[4];
+            second = LED8[6] * 10 + LED8[7];
+
+            mode = SHOW;
+            break;
+        default:
+            break;
+        }
+    }
+    else
+    {
+        switch (mode)
+        {
+        case SET_HOUR:
+        case SET_MINUTE:
+        case SET_SECOND:
+            mode = SHOW;
+            break;
+        default:
+            break;
+        }
+    }
+
     shortOrLang = 0;
 }
 
@@ -138,9 +239,14 @@ void SecondIncrease()
     }
 }
 
-void Display()
+void Display(unsigned char enable)
 {
-    DisplayOneCharOnAddr(LED8[displayIndex], displayIndex); // 显示数码管
+    enable >>= displayIndex;
+    enable &= 1;
+    if (enable == 1)
+        DisplayOneCharOnAddr(LED8[displayIndex], displayIndex); // 显示数码管
+    else
+        DisplayOneCharOnAddr(17, displayIndex);
     displayIndex++;
     displayIndex %= 8; // 显示下一个数码管
 }
@@ -175,20 +281,52 @@ void Timer0() interrupt 1
         }
     }
 
-    LED8[0] = hour / 10; // 显示小时十位
-    LED8[1] = hour % 10; // 显示小时个位
-    LED8[2] = 16;
-    LED8[3] = minute / 10; // 显示分钟十位
-    LED8[4] = minute % 10; // 显示分钟个位
-    LED8[5] = 16;
-    LED8[6] = second / 10; // 显示秒十位
-    LED8[7] = second % 10; // 显示秒个位
-
-    Display();
+    switch (mode)
+    {
+    case SHOW:
+        LED8[0] = hour / 10; // 显示小时十位
+        LED8[1] = hour % 10; // 显示小时个位
+        LED8[2] = 16;
+        LED8[3] = minute / 10; // 显示分钟十位
+        LED8[4] = minute % 10; // 显示分钟个位
+        LED8[5] = 16;
+        LED8[6] = second / 10; // 显示秒十位
+        LED8[7] = second % 10; // 显示秒个位
+        Display(0xFF);
+        break;
+    case SET:
+        if (interruptCount < 500)
+            Display(0xFF);
+        else
+            Display(0); // 关闭数码管
+        break;
+    case SET_HOUR:
+        if (interruptCount < 500)
+            Display(0xFF);
+        else
+            Display(0xFC);
+        break;
+    case SET_MINUTE:
+        if (interruptCount < 500)
+            Display(0xFF);
+        else
+            Display(0xE7);
+        break;
+    case SET_SECOND:
+        if (interruptCount < 500)
+            Display(0xFF);
+        else
+            Display(0x3F);
+        break;
+    default:
+        break;
+    }
 }
 
 void Init()
 {
+    mode = SHOW;
+
     EA = 1;      // 开启总中断
     IT0 = 1;     // 设置外部中断0为边沿触发方式
     EX0 = 1;     // 允许外部中断0
