@@ -13,13 +13,24 @@ unsigned char hour = INIT_HOUR;     // 初始化小时
 unsigned char minute = INIT_MINUTE; // 初始化分钟
 unsigned char second = INIT_SECOND; // 初始化秒
 
+unsigned int year = 2020; // 初始化年
+unsigned char month = 2;  // 初始化月
+unsigned char day = 28;   // 初始化日
+
+unsigned int weekDay = 5; // 初始化星期
+
+// ((year % 100) + (year % 100) / 4 + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
+
 unsigned char alarmHour = 23;   // 闹钟时
 unsigned char alarmMinute = 59; // 闹钟分
 
 enum MODE
 {
-    SHOW,             // 显示模式
-    SET,              // 设置模式
+    SHOW_TIME,        // 显示时间模式
+    SHOW_DATE,        // 显示日期模式
+    SET_YEAR,         // 设置年模式
+    SET_MONTH,        // 设置月模式
+    SET_DAY,          // 设置日模式
     SET_HOUR,         // 设置时模式
     SET_MINUTE,       // 设置分模式
     SET_SECOND,       // 设置秒模式
@@ -31,7 +42,7 @@ enum MODE
     ALARMCLOCK_MINUTE // 设置闹钟分模式
 };
 
-unsigned char mode = SHOW; // 模式
+unsigned char mode = SHOW_TIME; // 模式
 
 unsigned char displayIndex = 0;
 unsigned char LED8[8] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -67,6 +78,21 @@ unsigned char code Seg_Data[] = {
     0x8E, /*F*/
     0xBF, /*-*/
     0xFF, /*OFF*/
+};
+
+unsigned char code Seg_Date[] = {
+    31, // 1月
+    28, // 2月
+    31, // 3月
+    30, // 4月
+    31, // 5月
+    30, // 6月
+    31, // 7月
+    31, // 8月
+    30, // 9月
+    31, // 10月
+    30, // 11月
+    31  // 12月
 };
 
 unsigned char code Seg_Addr[] = {
@@ -120,6 +146,26 @@ void Check()
     }
 }
 
+// 检查日期程序，返回0表示日期无误，返回1表示日期有误
+int CheckDate(unsigned int year, unsigned char month, unsigned char day)
+{
+    if (month > 12 || month < 1)
+        return 1; // 月份有误
+    if (day < 1)
+        return 1; // 日期有误
+    if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2)
+    {
+        if (day > 29)
+            return 1; // 闰年2月29日有误
+    }
+    else
+    {
+        if (day > Seg_Date[month - 1])
+            return 1;
+    }
+    return 0;
+}
+
 // 短按处理程序
 void ShortPress()
 {
@@ -127,17 +173,14 @@ void ShortPress()
     {
         switch (mode)
         {
-        case SHOW:
-            mode = SET;
-            break;
-        case SET:
+        case SHOW_TIME:
             mode = STOPWATCH;
             break;
         case STOPWATCH:
             mode = ALARMCLOCK;
             break;
         case ALARMCLOCK:
-            mode = SHOW;
+            mode = SHOW_TIME;
             break;
         case SET_HOUR:
             mode = SET_MINUTE;
@@ -147,6 +190,15 @@ void ShortPress()
             break;
         case SET_SECOND:
             mode = SET_HOUR;
+            break;
+        case SET_YEAR:
+            mode = SET_MONTH;
+            break;
+        case SET_MONTH:
+            mode = SET_DAY;
+            break;
+        case SET_DAY:
+            mode = SET_YEAR;
             break;
         case ALARMCLOCK_HOUR:
             mode = ALARMCLOCK_MINUTE;
@@ -163,10 +215,40 @@ void ShortPress()
         unsigned char setHour = LED8[0] * 10 + LED8[1];
         unsigned char setMinute = LED8[3] * 10 + LED8[4];
         unsigned char setSecond = LED8[6] * 10 + LED8[7];
+        unsigned int setYear = LED8[0] * 1000 + LED8[1] * 100 + LED8[2] * 10 + LED8[3];
+        unsigned char setMonth = LED8[4] * 10 + LED8[5];
+        unsigned char setDay = LED8[6] * 10 + LED8[7];
         unsigned char setAlarmHour = LED8[3] * 10 + LED8[4];
         unsigned char setAlarmMinute = LED8[6] * 10 + LED8[7];
         switch (mode)
         {
+        case SHOW_TIME:
+            mode = SHOW_DATE;
+            break;
+        case SHOW_DATE:
+            mode = SHOW_TIME;
+            break;
+        case SET_YEAR:
+            setYear++;
+            setYear %= 10000;
+            LED8[0] = setYear / 1000;
+            LED8[1] = setYear / 100 % 10;
+            LED8[2] = setYear / 10 % 10;
+            LED8[3] = setYear % 10;
+            break;
+        case SET_MONTH:
+            setMonth = (setMonth % 12) + 1;
+            LED8[4] = setMonth / 10;
+            LED8[5] = setMonth % 10;
+            break;
+        case SET_DAY:
+            if (((setYear % 4 == 0 && setYear % 100 != 0) || (setYear % 400 == 0)) && setMonth == 2) // 闰年2月
+                setDay = (setDay % 29) + 1;
+            else
+                setDay = (setDay % Seg_Date[setMonth - 1]) + 1;
+            LED8[6] = setDay / 10;
+            LED8[7] = setDay % 10;
+            break;
         case SET_HOUR:
             setHour++;
             setHour %= 24;
@@ -224,8 +306,23 @@ void LongPress()
     {
         switch (mode)
         {
-        case SET:
+        case SHOW_TIME:
             mode = SET_HOUR;
+            break;
+        case SHOW_DATE:
+            mode = SET_YEAR;
+            break;
+        case SET_YEAR:
+        case SET_MONTH:
+        case SET_DAY:
+            if (!CheckDate(LED8[0] * 1000 + LED8[1] * 100 + LED8[2] * 10 + LED8[3], LED8[4] * 10 + LED8[5], LED8[6] * 10 + LED8[7])) // 如果日期无误才能确定
+            {
+                year = LED8[0] * 1000 + LED8[1] * 100 + LED8[2] * 10 + LED8[3];
+                month = LED8[4] * 10 + LED8[5];
+                day = LED8[6] * 10 + LED8[7];
+
+                mode = SHOW_DATE;
+            }
             break;
         case SET_HOUR:
         case SET_MINUTE:
@@ -234,7 +331,7 @@ void LongPress()
             minute = LED8[3] * 10 + LED8[4];
             second = LED8[6] * 10 + LED8[7];
 
-            mode = SHOW;
+            mode = SHOW_TIME;
             break;
         case ALARMCLOCK:
             mode = ALARMCLOCK_HOUR;
@@ -252,15 +349,46 @@ void LongPress()
     }
     else
     {
+        unsigned int setYear = LED8[0] * 1000 + LED8[1] * 100 + LED8[2] * 10 + LED8[3];
+        unsigned char setMonth = LED8[4] * 10 + LED8[5];
+        unsigned char setDay = LED8[6] * 10 + LED8[7];
         switch (mode)
         {
-        case SHOW:
+        case SHOW_TIME:
             hourlyChime = !hourlyChime;
             break;
         case SET_HOUR:
         case SET_MINUTE:
         case SET_SECOND:
-            mode = SHOW;
+            mode = SHOW_TIME;
+            break;
+        case SET_YEAR:
+            setYear--;
+            setYear %= 10000;
+            LED8[0] = setYear / 1000;
+            LED8[1] = setYear / 100 % 10;
+            LED8[2] = setYear / 10 % 10;
+            LED8[3] = setYear % 10;
+            break;
+        case SET_MONTH:
+            setMonth += 10;
+            setMonth = (setMonth % 12) + 1;
+            LED8[4] = setMonth / 10;
+            LED8[5] = setMonth % 10;
+            break;
+        case SET_DAY:
+            if (((setYear % 4 == 0 && setYear % 100 != 0) || (setYear % 400 == 0)) && setMonth == 2)
+            {
+                setDay += 29 - 2;
+                setDay = (setDay % 29) + 1;
+            }
+            else
+            {
+                setDay += Seg_Date[setMonth - 1] - 2;
+                setDay = (setDay % Seg_Date[setMonth - 1]) + 1;
+            }
+            LED8[6] = setDay / 10;
+            LED8[7] = setDay % 10;
             break;
         case STOPWATCH_PAUSE:
             mode = STOPWATCH;
@@ -333,6 +461,21 @@ unsigned int stopwatchMSecond = 0;
 unsigned char stopwatchSecond = 0;
 unsigned char stopwatchMinute = 0;
 
+void DateIncrease()
+{
+    day++;
+    if (CheckDate(year, month, day))
+    {
+        day = 1;
+        month++;
+        if (month > 12)
+        {
+            month = 1;
+            year++;
+        }
+    }
+}
+
 // 定时器0中断服务函数
 void Timer0() interrupt 1
 {
@@ -346,6 +489,10 @@ void Timer0() interrupt 1
     { // 1秒
         interruptCount = 0;
         SecondIncrease();
+        if (hour == 0 && minute == 0 && second == 0)
+        {
+            DateIncrease();
+        }
     }
 
     if (buttonDown == 1)
@@ -362,7 +509,7 @@ void Timer0() interrupt 1
         LongPress();
     }
 
-    if (mode == SHOW && alarm == 1)
+    if (mode == SHOW_TIME && alarm == 1)
     {
         if (hour == alarmHour && minute == alarmMinute && second == 00 && interruptCount == 0)
             alarmClockTimes = 2 * ALARMCLOCKTIMES;
@@ -380,7 +527,7 @@ void Timer0() interrupt 1
         }
     }
 
-    if (mode == SHOW && hourlyChime == 1)
+    if (mode == SHOW_TIME && hourlyChime == 1)
     {
         if (hourlyChimeTimes == 0 && minute == 0 && second == 0 && interruptCount == 0)
             hourlyChimeTimes = 2 * (HOURLYCHIMETIMES + 1); // 我也不知道这里为什么要加一，但事实就是它会响HOURLYCHIMETIMES-1次，所以要加一补上。
@@ -400,7 +547,7 @@ void Timer0() interrupt 1
 
     switch (mode)
     {
-    case SHOW:
+    case SHOW_TIME:
         LED8[0] = hour / 10; // 显示小时十位
         LED8[1] = hour % 10; // 显示小时个位
         LED8[2] = 16;
@@ -411,11 +558,16 @@ void Timer0() interrupt 1
         LED8[7] = second % 10; // 显示秒个位
         Display(0xFF);
         break;
-    case SET:
-        if (interruptCount < (500 / INTERVAL))
-            Display(0xFF);
-        else
-            Display(0); // 关闭数码管
+    case SHOW_DATE:
+        LED8[0] = year / 1000;
+        LED8[1] = year / 100 % 10;
+        LED8[2] = year / 10 % 10;
+        LED8[3] = year % 10;
+        LED8[4] = month / 10;
+        LED8[5] = month % 10;
+        LED8[6] = day / 10;
+        LED8[7] = day % 10;
+        Display(0xFF);
         break;
     case SET_HOUR:
         if (interruptCount < (500 / INTERVAL))
@@ -430,6 +582,24 @@ void Timer0() interrupt 1
             Display(0xE7);
         break;
     case SET_SECOND:
+        if (interruptCount < (500 / INTERVAL))
+            Display(0xFF);
+        else
+            Display(0x3F);
+        break;
+    case SET_YEAR:
+        if (interruptCount < (500 / INTERVAL))
+            Display(0xFF);
+        else
+            Display(0xF0);
+        break;
+    case SET_MONTH:
+        if (interruptCount < (500 / INTERVAL))
+            Display(0xFF);
+        else
+            Display(0xCF);
+        break;
+    case SET_DAY:
         if (interruptCount < (500 / INTERVAL))
             Display(0xFF);
         else
