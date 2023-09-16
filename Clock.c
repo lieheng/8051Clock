@@ -17,7 +17,7 @@ unsigned int year = 2020; // 初始化年
 unsigned char month = 2;  // 初始化月
 unsigned char day = 28;   // 初始化日
 
-unsigned int weekDay = 5; // 初始化星期
+unsigned char weekDay = 5; // 初始化星期
 
 // ((year % 100) + (year % 100) / 4 + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
 
@@ -109,7 +109,7 @@ unsigned char code Seg_Addr[] = {
     0x00  // OFF
 };
 
-void DisplayOneCharOnAddr(unsigned char, unsigned char Addr);
+void Display(unsigned char numEnable, unsigned char pointEnable);
 void SEG_Send595OneByte(unsigned char ucData); // 向74HC595写入一个8位的数据
 void SecondIncrease();
 
@@ -235,11 +235,13 @@ void ShortPress()
             LED8[1] = setYear / 100 % 10;
             LED8[2] = setYear / 10 % 10;
             LED8[3] = setYear % 10;
+            weekDay = ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) + ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) / 4) + (setYear / 100) / 4 - 2 * (setYear / 100) + (26 * ((setMonth > 2 ? setMonth : setMonth + 12) + 1) / 10) + setDay - 1) % 7;
             break;
         case SET_MONTH:
             setMonth = (setMonth % 12) + 1;
             LED8[4] = setMonth / 10;
             LED8[5] = setMonth % 10;
+            weekDay = ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) + ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) / 4) + (setYear / 100) / 4 - 2 * (setYear / 100) + (26 * ((setMonth > 2 ? setMonth : setMonth + 12) + 1) / 10) + setDay - 1) % 7;
             break;
         case SET_DAY:
             if (((setYear % 4 == 0 && setYear % 100 != 0) || (setYear % 400 == 0)) && setMonth == 2) // 闰年2月
@@ -248,6 +250,7 @@ void ShortPress()
                 setDay = (setDay % Seg_Date[setMonth - 1]) + 1;
             LED8[6] = setDay / 10;
             LED8[7] = setDay % 10;
+            weekDay = ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) + ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) / 4) + (setYear / 100) / 4 - 2 * (setYear / 100) + (26 * ((setMonth > 2 ? setMonth : setMonth + 12) + 1) / 10) + setDay - 1) % 7;
             break;
         case SET_HOUR:
             setHour++;
@@ -321,6 +324,8 @@ void LongPress()
                 month = LED8[4] * 10 + LED8[5];
                 day = LED8[6] * 10 + LED8[7];
 
+                weekDay = ((month > 2 ? (year % 100) : (year % 100) - 1) + ((month > 2 ? (year % 100) : (year % 100) - 1) / 4) + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
+
                 mode = SHOW_DATE;
             }
             break;
@@ -369,12 +374,14 @@ void LongPress()
             LED8[1] = setYear / 100 % 10;
             LED8[2] = setYear / 10 % 10;
             LED8[3] = setYear % 10;
+            weekDay = ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) + ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) / 4) + (setYear / 100) / 4 - 2 * (setYear / 100) + (26 * ((setMonth > 2 ? setMonth : setMonth + 12) + 1) / 10) + setDay - 1) % 7;
             break;
         case SET_MONTH:
             setMonth += 10;
             setMonth = (setMonth % 12) + 1;
             LED8[4] = setMonth / 10;
             LED8[5] = setMonth % 10;
+            weekDay = ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) + ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) / 4) + (setYear / 100) / 4 - 2 * (setYear / 100) + (26 * ((setMonth > 2 ? setMonth : setMonth + 12) + 1) / 10) + setDay - 1) % 7;
             break;
         case SET_DAY:
             if (((setYear % 4 == 0 && setYear % 100 != 0) || (setYear % 400 == 0)) && setMonth == 2)
@@ -389,6 +396,7 @@ void LongPress()
             }
             LED8[6] = setDay / 10;
             LED8[7] = setDay % 10;
+            weekDay = ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) + ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) / 4) + (setYear / 100) / 4 - 2 * (setYear / 100) + (26 * ((setMonth > 2 ? setMonth : setMonth + 12) + 1) / 10) + setDay - 1) % 7;
             break;
         case STOPWATCH_PAUSE:
             mode = STOPWATCH;
@@ -442,18 +450,6 @@ void SecondIncrease()
     }
 }
 
-void Display(unsigned char enable)
-{
-    enable >>= displayIndex;
-    enable &= 1;
-    if (enable == 1)
-        DisplayOneCharOnAddr(LED8[displayIndex], displayIndex); // 显示数码管
-    else
-        DisplayOneCharOnAddr(17, displayIndex);
-    displayIndex++;
-    displayIndex %= 8; // 显示下一个数码管
-}
-
 unsigned char hourlyChimeTimes = 0;
 unsigned char alarmClockTimes = 0;
 
@@ -479,7 +475,6 @@ void DateIncrease()
 // 定时器0中断服务函数
 void Timer0() interrupt 1
 {
-
     interruptCount++;
 
     TH0 = (65536 - INTERVAL * 1000) / 256;
@@ -492,6 +487,7 @@ void Timer0() interrupt 1
         if (hour == 0 && minute == 0 && second == 0)
         {
             DateIncrease();
+            weekDay = ((month > 2 ? (year % 100) : (year % 100) - 1) + ((month > 2 ? (year % 100) : (year % 100) - 1) / 4) + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
         }
     }
 
@@ -556,7 +552,7 @@ void Timer0() interrupt 1
         LED8[5] = 16;
         LED8[6] = second / 10; // 显示秒十位
         LED8[7] = second % 10; // 显示秒个位
-        Display(0xFF);
+        Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         break;
     case SHOW_DATE:
         LED8[0] = year / 1000;
@@ -567,43 +563,43 @@ void Timer0() interrupt 1
         LED8[5] = month % 10;
         LED8[6] = day / 10;
         LED8[7] = day % 10;
-        Display(0xFF);
+        Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         break;
     case SET_HOUR:
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF);
+            Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         else
-            Display(0xFC);
+            Display(0xFC, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         break;
     case SET_MINUTE:
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF);
+            Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         else
-            Display(0xE7);
+            Display(0xE7, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         break;
     case SET_SECOND:
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF);
+            Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         else
-            Display(0x3F);
+            Display(0x3F, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         break;
     case SET_YEAR:
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF);
+            Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         else
-            Display(0xF0);
+            Display(0xF0, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         break;
     case SET_MONTH:
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF);
+            Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         else
-            Display(0xCF);
+            Display(0xCF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         break;
     case SET_DAY:
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF);
+            Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         else
-            Display(0x3F);
+            Display(0x3F, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
         break;
     case STOPWATCH:
         stopwatchMSecond = 0;
@@ -618,7 +614,7 @@ void Timer0() interrupt 1
         LED8[6] = stopwatchMSecond / 100;
         LED8[7] = (stopwatchMSecond % 100) / 10;
 
-        Display(0xFF);
+        Display(0xFF, 0x00);
         break;
     case STOPWATCH_START:
         stopwatchMSecond += INTERVAL;
@@ -646,10 +642,10 @@ void Timer0() interrupt 1
         LED8[6] = stopwatchMSecond / 100;
         LED8[7] = (stopwatchMSecond % 100) / 10;
 
-        Display(0xFF);
+        Display(0xFF, 0x00);
         break;
     case STOPWATCH_PAUSE:
-        Display(0xFF);
+        Display(0xFF, 0x00);
         break;
     case ALARMCLOCK:
         LED8[3] = alarmHour / 10;
@@ -669,19 +665,19 @@ void Timer0() interrupt 1
             LED8[1] = 15;
             LED8[2] = 15;
         }
-        Display(0xFF);
+        Display(0xFF, 0x00);
         break;
     case ALARMCLOCK_HOUR:
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF);
+            Display(0xFF, 0x00);
         else
-            Display(0xE7);
+            Display(0xE7, 0x00);
         break;
     case ALARMCLOCK_MINUTE:
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF);
+            Display(0xFF, 0x00);
         else
-            Display(0x3F);
+            Display(0x3F, 0x00);
         break;
     default:
         break;
@@ -714,6 +710,35 @@ void main()
     }
 }
 
+void Display(unsigned char numEnable, unsigned char pointEnable)
+{
+    unsigned char LED = Seg_Data[17];
+
+    numEnable >>= displayIndex;
+    numEnable &= 1;
+    if (numEnable == 1)
+    {
+        LED = Seg_Data[LED8[displayIndex]];
+    }
+
+    pointEnable >>= displayIndex;
+    pointEnable &= 1;
+    if (pointEnable == 1)
+    {
+        LED = LED & 0x7F; // 显示小数点
+    }
+
+    SEG_Send595OneByte(Seg_Addr[displayIndex]); // 显示在哪一个数码管上
+    SEG_Send595OneByte(LED);
+
+    SEG_STCP = 0;
+    SEG_STCP = 1; // STCP引脚的上升沿更新数据
+    SEG_STCP = 0;
+
+    displayIndex++;
+    displayIndex %= 8;
+}
+
 // 向HC595发送一个字节
 void SEG_Send595OneByte(unsigned char ucData)
 {
@@ -727,28 +752,4 @@ void SEG_Send595OneByte(unsigned char ucData)
         SEG_SHCP = 0; // SHCP引脚的上升沿移入数据
         ucData <<= 1; // 数据左移
     }
-}
-
-/*******************************************************
-函数功能：在指定位置显示一个数据
-参数说明：Data是要显示的数据，Addr是在第几位显示。
-
-Addr取值范围是0~9。
-Addr=0~7时，选择的是显示在第几位数码管上;
-Addr=8  时，同时选中8位数码管，即打开所有数码管
-Addr=9  时，关闭8位数码管
-
-8位数码管，左数依次为第0位，第1位...第7位。
-
-*******************************************************/
-void DisplayOneCharOnAddr(unsigned char Data, unsigned char Addr)
-{
-    SEG_Send595OneByte(Seg_Addr[Addr]); // 显示在哪一个数码管上
-    if (hourlyChime == 1 && displayIndex == 7)
-        SEG_Send595OneByte(Seg_Data[Data] & 0x7F); // 显示的数据
-    else
-        SEG_Send595OneByte(Seg_Data[Data]); // 显示的数据
-    SEG_STCP = 0;
-    SEG_STCP = 1; // STCP引脚的上升沿更新数据
-    SEG_STCP = 0;
 }
