@@ -6,38 +6,55 @@
 #define INIT_MINUTE 59 // 初始化分钟
 #define INIT_SECOND 58 // 初始化秒
 
-#define HOURLYCHIMETIMES 3 // 整点响铃次数
-#define ALARMCLOCKTIMES 6  // 闹钟响铃次数
+#define INIT_YEAR 2020 // 初始化年
+#define INIT_MONTH 2   // 初始化月
+#define INIT_DAY 28    // 初始化日
+
+#define INIT_ALARM 0         // 初始化闹钟功能，1表示响，0表示不响
+#define INIT_ALARM_HOUR 23   // 初始化闹钟小时
+#define INIT_ALARM_MINUTE 59 // 初始化闹钟分钟
+#define INIT_ALARM_WEEKDAY 0 // 初始化闹钟星期
+#define ALARMCLOCKTIMES 6    // 闹钟响铃次数
+
+#define INIT_HOURLY_CHIME 0 // 初始化整点报时功能，1表示开，0表示关
+#define HOURLYCHIMETIMES 3  // 整点响铃次数
 
 unsigned char hour = INIT_HOUR;     // 初始化小时
 unsigned char minute = INIT_MINUTE; // 初始化分钟
 unsigned char second = INIT_SECOND; // 初始化秒
 
-unsigned int year = 2020; // 初始化年
-unsigned char month = 2;  // 初始化月
-unsigned char day = 28;   // 初始化日
+unsigned int year = INIT_YEAR;    // 初始化年
+unsigned char month = INIT_MONTH; // 初始化月
+unsigned char day = INIT_DAY;     // 初始化日
 
-unsigned char weekDay = 5; // 初始化星期
+unsigned char weekDay = 0; // 星期，星期初始化任务由init()函数负责
 
-unsigned char alarmHour = 23;   // 闹钟时
-unsigned char alarmMinute = 59; // 闹钟分
+unsigned char alarmHour = INIT_ALARM_HOUR;     // 闹钟时
+unsigned char alarmMinute = INIT_ALARM_MINUTE; // 闹钟分
 
 enum MODE
 {
-    SHOW_TIME,        // 显示时间模式
-    SHOW_DATE,        // 显示日期模式
-    SET_YEAR,         // 设置年模式
-    SET_MONTH,        // 设置月模式
-    SET_DAY,          // 设置日模式
-    SET_HOUR,         // 设置时模式
-    SET_MINUTE,       // 设置分模式
-    SET_SECOND,       // 设置秒模式
-    STOPWATCH,        // 秒表模式
-    STOPWATCH_START,  // 秒表计时模式
-    STOPWATCH_PAUSE,  // 秒表暂停模式
-    ALARMCLOCK,       // 闹钟模式
-    ALARMCLOCK_HOUR,  // 设置闹钟时模式
-    ALARMCLOCK_MINUTE // 设置闹钟分模式
+    SHOW_TIME,            // 显示时间模式
+    SHOW_DATE,            // 显示日期模式
+    SET_YEAR,             // 设置年模式
+    SET_MONTH,            // 设置月模式
+    SET_DAY,              // 设置日模式
+    SET_HOUR,             // 设置时模式
+    SET_MINUTE,           // 设置分模式
+    SET_SECOND,           // 设置秒模式
+    STOPWATCH,            // 秒表模式
+    STOPWATCH_START,      // 秒表计时模式
+    STOPWATCH_PAUSE,      // 秒表暂停模式
+    ALARMCLOCK,           // 闹钟模式
+    ALARMCLOCK_HOUR,      // 设置闹钟时模式
+    ALARMCLOCK_MINUTE,    // 设置闹钟分模式
+    ALARMCLOCK_SUNDAY,    // 设置闹钟周日模式
+    ALARMCLOCK_MONDAY,    // 设置闹钟周一模式
+    ALARMCLOCK_TUESDAY,   // 设置闹钟周二模式
+    ALARMCLOCK_WEDNESDAY, // 设置闹钟周三模式
+    ALARMCLOCK_THURSDAY,  // 设置闹钟周四模式
+    ALARMCLOCK_FRIDAY,    // 设置闹钟周五模式
+    ALARMCLOCK_SATURDAY   // 设置闹钟周六模式
 };
 
 unsigned char mode = SHOW_TIME; // 模式
@@ -48,8 +65,9 @@ unsigned char LED8Point = 0;
 
 unsigned int interruptCount = 0; // 中断次数
 
-bit hourlyChime = 0; // 整点报时功能，1表示开，0表示关
-bit alarm = 0;       // 闹钟功能，1表示响，0表示不响
+bit hourlyChime = INIT_HOURLY_CHIME;             // 整点报时功能，1表示开，0表示关
+bit alarm = INIT_ALARM;                          // 闹钟功能，1表示响，0表示不响
+unsigned char alarmWeekday = INIT_ALARM_WEEKDAY; // 闹钟星期功能，低0位为1表示周日响，低1位为1表示周一响，以此类推
 
 sbit SEG_DS = P2 ^ 0;   // 74HC595芯片的数据引脚
 sbit SEG_SHCP = P2 ^ 1; // 74HC595芯片的控制引脚，上升沿移入数据
@@ -165,6 +183,10 @@ int CheckDate(unsigned int year, unsigned char month, unsigned char day)
     return 0;
 }
 
+unsigned char setAlarmHour = INIT_ALARM_HOUR;
+unsigned char setAlarmMinute = INIT_ALARM_MINUTE;
+unsigned char setAlarmWeekday = INIT_ALARM_WEEKDAY;
+
 // 短按处理程序
 void ShortPress()
 {
@@ -203,6 +225,54 @@ void ShortPress()
             mode = ALARMCLOCK_MINUTE;
             break;
         case ALARMCLOCK_MINUTE:
+            LED8[0] = setAlarmWeekday & 1;
+            LED8[1] = setAlarmWeekday >> 1 & 1;
+            LED8[2] = setAlarmWeekday >> 2 & 1;
+            LED8[3] = setAlarmWeekday >> 3 & 1;
+            LED8[4] = setAlarmWeekday >> 4 & 1;
+            LED8[5] = setAlarmWeekday >> 5 & 1;
+            LED8[6] = setAlarmWeekday >> 6 & 1;
+            LED8[7] = 17;
+            LED8Point = setAlarmWeekday;
+            mode = ALARMCLOCK_SUNDAY;
+            break;
+        case ALARMCLOCK_SUNDAY:
+            mode = ALARMCLOCK_MONDAY;
+            break;
+        case ALARMCLOCK_MONDAY:
+            mode = ALARMCLOCK_TUESDAY;
+            break;
+        case ALARMCLOCK_TUESDAY:
+            mode = ALARMCLOCK_WEDNESDAY;
+            break;
+        case ALARMCLOCK_WEDNESDAY:
+            mode = ALARMCLOCK_THURSDAY;
+            break;
+        case ALARMCLOCK_THURSDAY:
+            mode = ALARMCLOCK_FRIDAY;
+            break;
+        case ALARMCLOCK_FRIDAY:
+            mode = ALARMCLOCK_SATURDAY;
+            break;
+        case ALARMCLOCK_SATURDAY:
+            LED8[3] = setAlarmHour / 10;
+            LED8[4] = setAlarmHour % 10;
+            LED8[5] = 16;
+            LED8[6] = setAlarmMinute / 10;
+            LED8[7] = setAlarmMinute % 10;
+            if (alarm)
+            {
+                LED8[0] = 17;
+                LED8[1] = 17;
+                LED8[2] = 17;
+            }
+            else
+            {
+                LED8[0] = 0;
+                LED8[1] = 15;
+                LED8[2] = 15;
+            }
+            LED8Point = setAlarmWeekday;
             mode = ALARMCLOCK_HOUR;
             break;
         default:
@@ -217,8 +287,7 @@ void ShortPress()
         unsigned int setYear = LED8[0] * 1000 + LED8[1] * 100 + LED8[2] * 10 + LED8[3];
         unsigned char setMonth = LED8[4] * 10 + LED8[5];
         unsigned char setDay = LED8[6] * 10 + LED8[7];
-        unsigned char setAlarmHour = LED8[3] * 10 + LED8[4];
-        unsigned char setAlarmMinute = LED8[6] * 10 + LED8[7];
+
         switch (mode)
         {
         case SHOW_TIME:
@@ -293,6 +362,42 @@ void ShortPress()
             LED8[6] = setAlarmMinute / 10;
             LED8[7] = setAlarmMinute % 10;
             break;
+        case ALARMCLOCK_SUNDAY:
+            LED8[0] = LED8[0] ^ 1;
+            setAlarmWeekday = setAlarmWeekday ^ (1 << 0); // 低0位取反
+            LED8Point = setAlarmWeekday;
+            break;
+        case ALARMCLOCK_MONDAY:
+            LED8[1] = LED8[1] ^ 1;
+            setAlarmWeekday = setAlarmWeekday ^ (1 << 1); // 低1位取反
+            LED8Point = setAlarmWeekday;
+            break;
+        case ALARMCLOCK_TUESDAY:
+            LED8[2] = LED8[2] ^ 1;
+            setAlarmWeekday = setAlarmWeekday ^ (1 << 2); // 低2位取反
+            LED8Point = setAlarmWeekday;
+            break;
+        case ALARMCLOCK_WEDNESDAY:
+            LED8[3] = LED8[3] ^ 1;
+            setAlarmWeekday = setAlarmWeekday ^ (1 << 3); // 低3位取反
+            LED8Point = setAlarmWeekday;
+            break;
+        case ALARMCLOCK_THURSDAY:
+            LED8[4] = LED8[4] ^ 1;
+            setAlarmWeekday = setAlarmWeekday ^ (1 << 4); // 低4位取反
+            LED8Point = setAlarmWeekday;
+            break;
+        case ALARMCLOCK_FRIDAY:
+            LED8[5] = LED8[5] ^ 1;
+            setAlarmWeekday = setAlarmWeekday ^ (1 << 5); // 低5位取反
+            LED8Point = setAlarmWeekday;
+            break;
+        case ALARMCLOCK_SATURDAY:
+            LED8[6] = LED8[6] ^ 1;
+            setAlarmWeekday = setAlarmWeekday ^ (1 << 6); // 低6位取反
+            LED8Point = setAlarmWeekday;
+            break;
+
         default:
             break;
         }
@@ -342,8 +447,16 @@ void LongPress()
             break;
         case ALARMCLOCK_HOUR:
         case ALARMCLOCK_MINUTE:
-            alarmHour = LED8[3] * 10 + LED8[4];
-            alarmMinute = LED8[6] * 10 + LED8[7];
+        case ALARMCLOCK_SUNDAY:
+        case ALARMCLOCK_MONDAY:
+        case ALARMCLOCK_TUESDAY:
+        case ALARMCLOCK_WEDNESDAY:
+        case ALARMCLOCK_THURSDAY:
+        case ALARMCLOCK_FRIDAY:
+        case ALARMCLOCK_SATURDAY:
+            alarmHour = setAlarmHour;
+            alarmMinute = setAlarmMinute;
+            alarmWeekday = setAlarmWeekday;
 
             mode = ALARMCLOCK;
             break;
@@ -402,6 +515,16 @@ void LongPress()
             break;
         case ALARMCLOCK_HOUR:
         case ALARMCLOCK_MINUTE:
+        case ALARMCLOCK_SUNDAY:
+        case ALARMCLOCK_MONDAY:
+        case ALARMCLOCK_TUESDAY:
+        case ALARMCLOCK_WEDNESDAY:
+        case ALARMCLOCK_THURSDAY:
+        case ALARMCLOCK_FRIDAY:
+        case ALARMCLOCK_SATURDAY:
+            setAlarmHour = alarmHour;
+            setAlarmMinute = alarmMinute;
+            setAlarmWeekday = alarmWeekday;
             mode = ALARMCLOCK;
             break;
         default:
@@ -506,7 +629,7 @@ void Timer0() interrupt 1
 
     if (mode == SHOW_TIME && alarm == 1)
     {
-        if (hour == alarmHour && minute == alarmMinute && second == 00 && interruptCount == 0)
+        if (hour == alarmHour && minute == alarmMinute && second == 00 && (alarmWeekday & (1 << weekDay)) > 0 && interruptCount == 0)
             alarmClockTimes = 2 * ALARMCLOCKTIMES;
         if (alarmClockTimes != 0)
         {
@@ -675,22 +798,62 @@ void Timer0() interrupt 1
             LED8[1] = 15;
             LED8[2] = 15;
         }
-        LED8Point = 0;
+        LED8Point = alarmWeekday;
         Display(0xFF, 0xFF);
         break;
     case ALARMCLOCK_HOUR:
-        LED8Point = 0;
         if (interruptCount < (500 / INTERVAL))
             Display(0xFF, 0xFF);
         else
             Display(0xE7, 0xFF);
         break;
     case ALARMCLOCK_MINUTE:
-        LED8Point = 0;
         if (interruptCount < (500 / INTERVAL))
             Display(0xFF, 0xFF);
         else
             Display(0x3F, 0xFF);
+        break;
+    case ALARMCLOCK_SUNDAY:
+        if (interruptCount < (500 / INTERVAL))
+            Display(0xFF, 0xFF);
+        else
+            Display(0xFF - (1 << 0), 0xFF);
+        break;
+    case ALARMCLOCK_MONDAY:
+        if (interruptCount < (500 / INTERVAL))
+            Display(0xFF, 0xFF);
+        else
+            Display(0xFF - (1 << 1), 0xFF);
+        break;
+    case ALARMCLOCK_TUESDAY:
+        if (interruptCount < (500 / INTERVAL))
+            Display(0xFF, 0xFF);
+        else
+            Display(0xFF - (1 << 2), 0xFF);
+        break;
+    case ALARMCLOCK_WEDNESDAY:
+        if (interruptCount < (500 / INTERVAL))
+            Display(0xFF, 0xFF);
+        else
+            Display(0xFF - (1 << 3), 0xFF);
+        break;
+    case ALARMCLOCK_THURSDAY:
+        if (interruptCount < (500 / INTERVAL))
+            Display(0xFF, 0xFF);
+        else
+            Display(0xFF - (1 << 4), 0xFF);
+        break;
+    case ALARMCLOCK_FRIDAY:
+        if (interruptCount < (500 / INTERVAL))
+            Display(0xFF, 0xFF);
+        else
+            Display(0xFF - (1 << 5), 0xFF);
+        break;
+    case ALARMCLOCK_SATURDAY:
+        if (interruptCount < (500 / INTERVAL))
+            Display(0xFF, 0xFF);
+        else
+            Display(0xFF - (1 << 6), 0xFF);
         break;
     default:
         break;
@@ -699,6 +862,8 @@ void Timer0() interrupt 1
 
 void Init()
 {
+    weekDay = ((month > 2 ? (year % 100) : (year % 100) - 1) + ((month > 2 ? (year % 100) : (year % 100) - 1) / 4) + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
+
     Chime = 0;
 
     EA = 1;      // 开启总中断
