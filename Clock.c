@@ -19,8 +19,6 @@ unsigned char day = 28;   // 初始化日
 
 unsigned char weekDay = 5; // 初始化星期
 
-// ((year % 100) + (year % 100) / 4 + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
-
 unsigned char alarmHour = 23;   // 闹钟时
 unsigned char alarmMinute = 59; // 闹钟分
 
@@ -46,6 +44,7 @@ unsigned char mode = SHOW_TIME; // 模式
 
 unsigned char displayIndex = 0;
 unsigned char LED8[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+unsigned char LED8Point = 0;
 
 unsigned int interruptCount = 0; // 中断次数
 
@@ -552,7 +551,8 @@ void Timer0() interrupt 1
         LED8[5] = 16;
         LED8[6] = second / 10; // 显示秒十位
         LED8[7] = second % 10; // 显示秒个位
-        Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
+        Display(0xFF, 0xFF);
         break;
     case SHOW_DATE:
         LED8[0] = year / 1000;
@@ -563,43 +563,50 @@ void Timer0() interrupt 1
         LED8[5] = month % 10;
         LED8[6] = day / 10;
         LED8[7] = day % 10;
-        Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
+        Display(0xFF, 0xFF);
         break;
     case SET_HOUR:
+        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+            Display(0xFF, 0xFF);
         else
-            Display(0xFC, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+            Display(0xFC, 0xFF);
         break;
     case SET_MINUTE:
+        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+            Display(0xFF, 0xFF);
         else
-            Display(0xE7, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+            Display(0xE7, 0xFF);
         break;
     case SET_SECOND:
+        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+            Display(0xFF, 0xFF);
         else
-            Display(0x3F, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+            Display(0x3F, 0xFF);
         break;
     case SET_YEAR:
+        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+            Display(0xFF, 0xFF);
         else
-            Display(0xF0, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+            Display(0xF0, 0xFF);
         break;
     case SET_MONTH:
+        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+            Display(0xFF, 0xFF);
         else
-            Display(0xCF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+            Display(0xCF, 0xFF);
         break;
     case SET_DAY:
+        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+            Display(0xFF, 0xFF);
         else
-            Display(0x3F, (hourlyChime ? 0x80 : 0x00) | 0x01 << weekDay);
+            Display(0x3F, 0xFF);
         break;
     case STOPWATCH:
         stopwatchMSecond = 0;
@@ -614,7 +621,8 @@ void Timer0() interrupt 1
         LED8[6] = stopwatchMSecond / 100;
         LED8[7] = (stopwatchMSecond % 100) / 10;
 
-        Display(0xFF, 0x00);
+        LED8Point = 0;
+        Display(0xFF, 0xFF);
         break;
     case STOPWATCH_START:
         stopwatchMSecond += INTERVAL;
@@ -642,10 +650,12 @@ void Timer0() interrupt 1
         LED8[6] = stopwatchMSecond / 100;
         LED8[7] = (stopwatchMSecond % 100) / 10;
 
-        Display(0xFF, 0x00);
+        LED8Point = 0;
+        Display(0xFF, 0xFF);
         break;
     case STOPWATCH_PAUSE:
-        Display(0xFF, 0x00);
+        LED8Point = 0;
+        Display(0xFF, 0xFF);
         break;
     case ALARMCLOCK:
         LED8[3] = alarmHour / 10;
@@ -665,19 +675,22 @@ void Timer0() interrupt 1
             LED8[1] = 15;
             LED8[2] = 15;
         }
-        Display(0xFF, 0x00);
+        LED8Point = 0;
+        Display(0xFF, 0xFF);
         break;
     case ALARMCLOCK_HOUR:
+        LED8Point = 0;
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF, 0x00);
+            Display(0xFF, 0xFF);
         else
-            Display(0xE7, 0x00);
+            Display(0xE7, 0xFF);
         break;
     case ALARMCLOCK_MINUTE:
+        LED8Point = 0;
         if (interruptCount < (500 / INTERVAL))
-            Display(0xFF, 0x00);
+            Display(0xFF, 0xFF);
         else
-            Display(0x3F, 0x00);
+            Display(0x3F, 0xFF);
         break;
     default:
         break;
@@ -714,16 +727,12 @@ void Display(unsigned char numEnable, unsigned char pointEnable)
 {
     unsigned char LED = Seg_Data[17];
 
-    numEnable >>= displayIndex;
-    numEnable &= 1;
-    if (numEnable == 1)
+    if (((numEnable >> displayIndex) & 1) == 1)
     {
         LED = Seg_Data[LED8[displayIndex]];
     }
 
-    pointEnable >>= displayIndex;
-    pointEnable &= 1;
-    if (pointEnable == 1)
+    if (((pointEnable >> displayIndex) & 1) == 1 && ((LED8Point >> displayIndex) & 1) == 1)
     {
         LED = LED & 0x7F; // 显示小数点
     }
