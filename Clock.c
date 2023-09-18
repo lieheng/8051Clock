@@ -27,10 +27,35 @@ unsigned int year = INIT_YEAR;    // 初始化年
 unsigned char month = INIT_MONTH; // 初始化月
 unsigned char day = INIT_DAY;     // 初始化日
 
-unsigned char weekDay = 0; // 星期，星期初始化任务由init()函数负责
+unsigned char weekday = 0; // 星期，星期初始化任务由init()函数负责
 
-unsigned char alarmHour = INIT_ALARM_HOUR;     // 闹钟时
-unsigned char alarmMinute = INIT_ALARM_MINUTE; // 闹钟分
+unsigned char alarmHour = INIT_ALARM_HOUR;       // 闹钟时
+unsigned char alarmMinute = INIT_ALARM_MINUTE;   // 闹钟分
+unsigned char alarmWeekday = INIT_ALARM_WEEKDAY; // 闹钟星期功能，低0位为1表示周日响，低1位为1表示周一响，以此类推
+
+bit alarm = INIT_ALARM; // 闹钟功能，1表示响，0表示不响
+
+bit hourlyChime = INIT_HOURLY_CHIME; // 整点报时功能，1表示开，0表示关
+
+bit buttonDown = 0;            // 用于判断是否有按键按下，1为有，0为无
+bit button = 0;                // 用于判断按下的是哪个按键
+unsigned int checkCount = 0;   // 用于检查按键是长按还是短按，每按一毫秒该变量加一
+unsigned char shortOrLang = 0; // 用于表示按键是长按还是短按的标志，0表示无效，1表示短按，2表示长按
+
+unsigned char displayIndex = 0;                   // 当前点亮的是那个数码管，从左到右分别为0,1,...,7
+unsigned char LED8[8] = {0, 0, 0, 0, 0, 0, 0, 0}; // 每个数码管显示的数字
+unsigned char LED8Point = 0;                      // 每个数码管是否要显示小数点，低0位为1表示第0个数码管要显示小数点
+
+unsigned char hourlyChimeTimes = 0; // 记录整点报时的响铃次数
+unsigned char alarmClockTimes = 0;  // 记录闹钟的响铃次数
+
+unsigned int stopwatchMSecond = 0; // 秒表的毫秒数
+unsigned char stopwatchSecond = 0; // 秒表的秒数
+unsigned char stopwatchMinute = 0; // 秒表的分钟数
+
+unsigned char setAlarmHour = INIT_ALARM_HOUR;       // 设置闹钟时的变量
+unsigned char setAlarmMinute = INIT_ALARM_MINUTE;   // 设置闹钟分的变量
+unsigned char setAlarmWeekday = INIT_ALARM_WEEKDAY; // 设置闹钟星期的变量，低0位为1表示周日响，低1位为1表示周一响，以此类推
 
 enum MODE
 {
@@ -59,21 +84,16 @@ enum MODE
 
 unsigned char mode = SHOW_TIME; // 模式
 
-unsigned char displayIndex = 0;
-unsigned char LED8[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-unsigned char LED8Point = 0;
-
 unsigned int interruptCount = 0; // 中断次数
-
-bit hourlyChime = INIT_HOURLY_CHIME;             // 整点报时功能，1表示开，0表示关
-bit alarm = INIT_ALARM;                          // 闹钟功能，1表示响，0表示不响
-unsigned char alarmWeekday = INIT_ALARM_WEEKDAY; // 闹钟星期功能，低0位为1表示周日响，低1位为1表示周一响，以此类推
 
 sbit SEG_DS = P2 ^ 0;   // 74HC595芯片的数据引脚
 sbit SEG_SHCP = P2 ^ 1; // 74HC595芯片的控制引脚，上升沿移入数据
 sbit SEG_STCP = P2 ^ 2; // 74HC595芯片的控制引脚，上升沿更新数据
 
 sbit Chime = P2 ^ 3; // 蜂鸣器
+
+sbit P3_2 = P3 ^ 2; // 外部中断0的控制引脚
+sbit P3_3 = P3 ^ 3; // 外部中断1的控制引脚
 
 unsigned char code Seg_Data[] = {
     // 共阳数码管的编码，并将数据定义在CODE区
@@ -126,33 +146,73 @@ unsigned char code Seg_Addr[] = {
     0x00  // OFF
 };
 
-void Display(unsigned char numEnable, unsigned char pointEnable);
-void SEG_Send595OneByte(unsigned char ucData); // 向74HC595写入一个8位的数据
+// 初始化函数
+void Init();
+// 检查当前按键是长按还是短按
+void Check();
+// 按键短按处理程序
+void ShortPress();
+// 按键长按处理程序
+void LongPress();
+// 秒数增加处理程序
 void SecondIncrease();
+// 日期增加处理程序
+void DateIncrease();
+// 更新日期
+void UpdateWeekday();
+// 检查日期程序，返回0表示日期无误，返回1表示日期有误
+bit CheckDate(unsigned int year, unsigned char month, unsigned char day);
+// 显示函数，用于显示LED8数组，以及LED8Point中的内容，参数分别为数字的使能，小数点的使能，若参数的低0位为0，则第0位数码管不显示对应内容。
+void Display(unsigned char numEnable, unsigned char pointEnable);
+// 向HC595发送一个字节
+void SEG_Send595OneByte(unsigned char ucData);
 
-unsigned int checkCount = 0;
-unsigned char shortOrLang = 0; // 0表示无效，1表示短按，2表示长按
+void main()
+{
+    Init();
+    while (1)
+    {
+        ;
+    }
+}
 
-bit buttonDown = 0;
-bit button = 0;
+// 初始化函数
+void Init()
+{
+    // 初始化星期
+    UpdateWeekday();
 
-sbit P3_2 = P3 ^ 2;
-sbit P3_3 = P3 ^ 3;
+    Chime = 0; // 初始化蜂鸣器引脚为0，防止损坏蜂鸣器
 
-// 判断按键是长按还是短按
+    EA = 1;      // 开启总中断
+    IT0 = 1;     // 设置外部中断0为边沿触发方式
+    EX0 = 1;     // 允许外部中断0
+    IT1 = 1;     // 设置外部中断1为边沿触发方式
+    EX1 = 1;     // 允许外部中断1
+    PT0 = 1;     // 计时器0中断优先级为最高
+    TMOD = 0x01; // 设置计时器0工作在方式1
+    ET0 = 1;     // 允许计时器0中断
+    TR0 = 1;     // 启动计时器
+
+    TH0 = (65536 - INTERVAL * 1000) / 256;
+    TL0 = (65536 - INTERVAL * 1000) % 256;
+}
+
+// 检查当前按键是长按还是短按
 void Check()
 {
-    checkCount++;
+    checkCount++; // 按键时间计数，每过一毫秒加一。
+
     if (checkCount < 10 / INTERVAL) // 10ms延迟去抖动
         return;
 
-    if (checkCount > 1010 / INTERVAL) // 如果大于一秒，为长按
+    if (checkCount > 1010 / INTERVAL) // 如果按下时间大于一秒，为长按。
     {
         shortOrLang = 2;
         checkCount = 0;
         buttonDown = 0;
     }
-    else
+    else // 如果按下时间小于一秒，则判断是否松开，若松开，则为短按，否则继续计数。
     {
         if ((button == 0 && P3_2 == 1) || (button == 1 && P3_3 == 1))
         {
@@ -163,31 +223,7 @@ void Check()
     }
 }
 
-// 检查日期程序，返回0表示日期无误，返回1表示日期有误
-int CheckDate(unsigned int year, unsigned char month, unsigned char day)
-{
-    if (month > 12 || month < 1)
-        return 1; // 月份有误
-    if (day < 1)
-        return 1; // 日期有误
-    if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2)
-    {
-        if (day > 29)
-            return 1; // 闰年2月29日有误
-    }
-    else
-    {
-        if (day > Seg_Date[month - 1])
-            return 1;
-    }
-    return 0;
-}
-
-unsigned char setAlarmHour = INIT_ALARM_HOUR;
-unsigned char setAlarmMinute = INIT_ALARM_MINUTE;
-unsigned char setAlarmWeekday = INIT_ALARM_WEEKDAY;
-
-// 短按处理程序
+// 按键短按处理程序
 void ShortPress()
 {
     if (button == 0) // 如果按的是键A
@@ -284,10 +320,6 @@ void ShortPress()
         unsigned char setHour = LED8[0] * 10 + LED8[1];
         unsigned char setMinute = LED8[3] * 10 + LED8[4];
         unsigned char setSecond = LED8[6] * 10 + LED8[7];
-        unsigned int setYear = LED8[0] * 1000 + LED8[1] * 100 + LED8[2] * 10 + LED8[3];
-        unsigned char setMonth = LED8[4] * 10 + LED8[5];
-        unsigned char setDay = LED8[6] * 10 + LED8[7];
-
         switch (mode)
         {
         case SHOW_TIME:
@@ -297,28 +329,28 @@ void ShortPress()
             mode = SHOW_TIME;
             break;
         case SET_YEAR:
-            setYear++;
-            setYear %= 10000;
-            LED8[0] = setYear / 1000;
-            LED8[1] = setYear / 100 % 10;
-            LED8[2] = setYear / 10 % 10;
-            LED8[3] = setYear % 10;
-            weekDay = ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) + ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) / 4) + (setYear / 100) / 4 - 2 * (setYear / 100) + (26 * ((setMonth > 2 ? setMonth : setMonth + 12) + 1) / 10) + setDay - 1) % 7;
+            year++;
+            year %= 10000;
+            LED8[0] = year / 1000;
+            LED8[1] = year / 100 % 10;
+            LED8[2] = year / 10 % 10;
+            LED8[3] = year % 10;
+            UpdateWeekday();
             break;
         case SET_MONTH:
-            setMonth = (setMonth % 12) + 1;
-            LED8[4] = setMonth / 10;
-            LED8[5] = setMonth % 10;
-            weekDay = ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) + ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) / 4) + (setYear / 100) / 4 - 2 * (setYear / 100) + (26 * ((setMonth > 2 ? setMonth : setMonth + 12) + 1) / 10) + setDay - 1) % 7;
+            month = (month % 12) + 1;
+            LED8[4] = month / 10;
+            LED8[5] = month % 10;
+            UpdateWeekday();
             break;
         case SET_DAY:
-            if (((setYear % 4 == 0 && setYear % 100 != 0) || (setYear % 400 == 0)) && setMonth == 2) // 闰年2月
-                setDay = (setDay % 29) + 1;
+            if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2) // 闰年2月
+                day = (day % 29) + 1;
             else
-                setDay = (setDay % Seg_Date[setMonth - 1]) + 1;
-            LED8[6] = setDay / 10;
-            LED8[7] = setDay % 10;
-            weekDay = ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) + ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) / 4) + (setYear / 100) / 4 - 2 * (setYear / 100) + (26 * ((setMonth > 2 ? setMonth : setMonth + 12) + 1) / 10) + setDay - 1) % 7;
+                day = (day % Seg_Date[month - 1]) + 1;
+            LED8[6] = day / 10;
+            LED8[7] = day % 10;
+            UpdateWeekday();
             break;
         case SET_HOUR:
             setHour++;
@@ -397,16 +429,15 @@ void ShortPress()
             setAlarmWeekday = setAlarmWeekday ^ (1 << 6); // 低6位取反
             LED8Point = setAlarmWeekday;
             break;
-
         default:
             break;
         }
     }
 
-    shortOrLang = 0;
+    shortOrLang = 0; // 重置按键标志
 }
 
-// 长按处理程序
+// 按键长按处理程序
 void LongPress()
 {
     if (button == 0) // 如果按的是键A
@@ -422,14 +453,8 @@ void LongPress()
         case SET_YEAR:
         case SET_MONTH:
         case SET_DAY:
-            if (!CheckDate(LED8[0] * 1000 + LED8[1] * 100 + LED8[2] * 10 + LED8[3], LED8[4] * 10 + LED8[5], LED8[6] * 10 + LED8[7])) // 如果日期无误才能确定
+            if (!CheckDate(year, month, day)) // 如果日期无误才能确定
             {
-                year = LED8[0] * 1000 + LED8[1] * 100 + LED8[2] * 10 + LED8[3];
-                month = LED8[4] * 10 + LED8[5];
-                day = LED8[6] * 10 + LED8[7];
-
-                weekDay = ((month > 2 ? (year % 100) : (year % 100) - 1) + ((month > 2 ? (year % 100) : (year % 100) - 1) / 4) + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
-
                 mode = SHOW_DATE;
             }
             break;
@@ -439,7 +464,6 @@ void LongPress()
             hour = LED8[0] * 10 + LED8[1];
             minute = LED8[3] * 10 + LED8[4];
             second = LED8[6] * 10 + LED8[7];
-
             mode = SHOW_TIME;
             break;
         case ALARMCLOCK:
@@ -457,7 +481,6 @@ void LongPress()
             alarmHour = setAlarmHour;
             alarmMinute = setAlarmMinute;
             alarmWeekday = setAlarmWeekday;
-
             mode = ALARMCLOCK;
             break;
         default:
@@ -466,9 +489,6 @@ void LongPress()
     }
     else
     {
-        unsigned int setYear = LED8[0] * 1000 + LED8[1] * 100 + LED8[2] * 10 + LED8[3];
-        unsigned char setMonth = LED8[4] * 10 + LED8[5];
-        unsigned char setDay = LED8[6] * 10 + LED8[7];
         switch (mode)
         {
         case SHOW_TIME:
@@ -480,35 +500,35 @@ void LongPress()
             mode = SHOW_TIME;
             break;
         case SET_YEAR:
-            setYear--;
-            setYear %= 10000;
-            LED8[0] = setYear / 1000;
-            LED8[1] = setYear / 100 % 10;
-            LED8[2] = setYear / 10 % 10;
-            LED8[3] = setYear % 10;
-            weekDay = ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) + ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) / 4) + (setYear / 100) / 4 - 2 * (setYear / 100) + (26 * ((setMonth > 2 ? setMonth : setMonth + 12) + 1) / 10) + setDay - 1) % 7;
+            year--;
+            year %= 10000;
+            LED8[0] = year / 1000;
+            LED8[1] = year / 100 % 10;
+            LED8[2] = year / 10 % 10;
+            LED8[3] = year % 10;
+            UpdateWeekday();
             break;
         case SET_MONTH:
-            setMonth += 10;
-            setMonth = (setMonth % 12) + 1;
-            LED8[4] = setMonth / 10;
-            LED8[5] = setMonth % 10;
-            weekDay = ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) + ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) / 4) + (setYear / 100) / 4 - 2 * (setYear / 100) + (26 * ((setMonth > 2 ? setMonth : setMonth + 12) + 1) / 10) + setDay - 1) % 7;
+            month += 10;
+            month = (month % 12) + 1;
+            LED8[4] = month / 10;
+            LED8[5] = month % 10;
+            UpdateWeekday();
             break;
         case SET_DAY:
-            if (((setYear % 4 == 0 && setYear % 100 != 0) || (setYear % 400 == 0)) && setMonth == 2)
+            if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2)
             {
-                setDay += 29 - 2;
-                setDay = (setDay % 29) + 1;
+                day += 29 - 2;
+                day = (day % 29) + 1;
             }
             else
             {
-                setDay += Seg_Date[setMonth - 1] - 2;
-                setDay = (setDay % Seg_Date[setMonth - 1]) + 1;
+                day += Seg_Date[month - 1] - 2;
+                day = (day % Seg_Date[month - 1]) + 1;
             }
-            LED8[6] = setDay / 10;
-            LED8[7] = setDay % 10;
-            weekDay = ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) + ((setMonth > 2 ? (setYear % 100) : (setYear % 100) - 1) / 4) + (setYear / 100) / 4 - 2 * (setYear / 100) + (26 * ((setMonth > 2 ? setMonth : setMonth + 12) + 1) / 10) + setDay - 1) % 7;
+            LED8[6] = day / 10;
+            LED8[7] = day % 10;
+            UpdateWeekday();
             break;
         case STOPWATCH_PAUSE:
             mode = STOPWATCH;
@@ -532,7 +552,74 @@ void LongPress()
         }
     }
 
-    shortOrLang = 0;
+    shortOrLang = 0; // 重置按键标志
+}
+
+// 秒数增加处理程序
+void SecondIncrease()
+{
+    second++;
+    if (second > 59)
+    {
+        second = 0;
+        minute++;
+    }
+
+    if (minute > 59)
+    {
+        minute = 0;
+        hour++;
+    }
+
+    if (hour > 23)
+    {
+        hour = 0;
+    }
+}
+
+// 日期增加处理程序
+void DateIncrease()
+{
+    day++;
+    if (CheckDate(year, month, day))
+    {
+        day = 1;
+        month++;
+        if (month > 12)
+        {
+            month = 1;
+            year++;
+        }
+    }
+}
+
+// 更新日期
+void UpdateWeekday()
+{
+    weekday = ((month > 2 ? (year % 100) : (year % 100) - 1) + ((month > 2 ? (year % 100) : (year % 100) - 1) / 4) + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
+}
+
+// 检查日期程序，返回0表示日期无误，返回1表示日期有误
+bit CheckDate(unsigned int year, unsigned char month, unsigned char day)
+{
+    if (month > 12 || month < 1)
+        return 1; // 月份有误
+
+    if (day < 1)
+        return 1; // 日期有误
+
+    if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2)
+    {
+        if (day > 29)
+            return 1; // 闰年2月29日有误
+    }
+    else
+    {
+        if (day > Seg_Date[month - 1])
+            return 1;
+    }
+
+    return 0;
 }
 
 void Int0() interrupt 0
@@ -553,47 +640,6 @@ void Int1() interrupt 2
     }
 }
 
-void SecondIncrease()
-{
-    second++;
-    if (second > 59)
-    {
-        second = 0;
-        minute++;
-    }
-    if (minute > 59)
-    {
-        minute = 0;
-        hour++;
-    }
-    if (hour > 23)
-    {
-        hour = 0;
-    }
-}
-
-unsigned char hourlyChimeTimes = 0;
-unsigned char alarmClockTimes = 0;
-
-unsigned int stopwatchMSecond = 0;
-unsigned char stopwatchSecond = 0;
-unsigned char stopwatchMinute = 0;
-
-void DateIncrease()
-{
-    day++;
-    if (CheckDate(year, month, day))
-    {
-        day = 1;
-        month++;
-        if (month > 12)
-        {
-            month = 1;
-            year++;
-        }
-    }
-}
-
 // 定时器0中断服务函数
 void Timer0() interrupt 1
 {
@@ -609,7 +655,7 @@ void Timer0() interrupt 1
         if (hour == 0 && minute == 0 && second == 0)
         {
             DateIncrease();
-            weekDay = ((month > 2 ? (year % 100) : (year % 100) - 1) + ((month > 2 ? (year % 100) : (year % 100) - 1) / 4) + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
+            UpdateWeekday();
         }
     }
 
@@ -629,7 +675,7 @@ void Timer0() interrupt 1
 
     if (mode == SHOW_TIME && alarm == 1)
     {
-        if (hour == alarmHour && minute == alarmMinute && second == 00 && (alarmWeekday & (1 << weekDay)) > 0 && interruptCount == 0)
+        if (hour == alarmHour && minute == alarmMinute && second == 00 && (alarmWeekday & (1 << weekday)) > 0 && interruptCount == 0)
             alarmClockTimes = 2 * ALARMCLOCKTIMES;
         if (alarmClockTimes != 0)
         {
@@ -674,7 +720,7 @@ void Timer0() interrupt 1
         LED8[5] = 16;
         LED8[6] = second / 10; // 显示秒十位
         LED8[7] = second % 10; // 显示秒个位
-        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
+        LED8Point = (1 << weekday) | (hourlyChime ? 0x80 : 0);
         Display(0xFF, 0xFF);
         break;
     case SHOW_DATE:
@@ -686,46 +732,46 @@ void Timer0() interrupt 1
         LED8[5] = month % 10;
         LED8[6] = day / 10;
         LED8[7] = day % 10;
-        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
+        LED8Point = (1 << weekday) | (hourlyChime ? 0x80 : 0);
         Display(0xFF, 0xFF);
         break;
     case SET_HOUR:
-        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
+        LED8Point = (1 << weekday) | (hourlyChime ? 0x80 : 0);
         if (interruptCount < (500 / INTERVAL))
             Display(0xFF, 0xFF);
         else
             Display(0xFC, 0xFF);
         break;
     case SET_MINUTE:
-        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
+        LED8Point = (1 << weekday) | (hourlyChime ? 0x80 : 0);
         if (interruptCount < (500 / INTERVAL))
             Display(0xFF, 0xFF);
         else
             Display(0xE7, 0xFF);
         break;
     case SET_SECOND:
-        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
+        LED8Point = (1 << weekday) | (hourlyChime ? 0x80 : 0);
         if (interruptCount < (500 / INTERVAL))
             Display(0xFF, 0xFF);
         else
             Display(0x3F, 0xFF);
         break;
     case SET_YEAR:
-        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
+        LED8Point = (1 << weekday) | (hourlyChime ? 0x80 : 0);
         if (interruptCount < (500 / INTERVAL))
             Display(0xFF, 0xFF);
         else
             Display(0xF0, 0xFF);
         break;
     case SET_MONTH:
-        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
+        LED8Point = (1 << weekday) | (hourlyChime ? 0x80 : 0);
         if (interruptCount < (500 / INTERVAL))
             Display(0xFF, 0xFF);
         else
             Display(0xCF, 0xFF);
         break;
     case SET_DAY:
-        LED8Point = (1 << weekDay) | (hourlyChime ? 0x80 : 0);
+        LED8Point = (1 << weekday) | (hourlyChime ? 0x80 : 0);
         if (interruptCount < (500 / INTERVAL))
             Display(0xFF, 0xFF);
         else
@@ -743,7 +789,6 @@ void Timer0() interrupt 1
         LED8[5] = 16;
         LED8[6] = stopwatchMSecond / 100;
         LED8[7] = (stopwatchMSecond % 100) / 10;
-
         LED8Point = 0;
         Display(0xFF, 0xFF);
         break;
@@ -763,7 +808,6 @@ void Timer0() interrupt 1
         {
             stopwatchMinute = 0;
         }
-
         LED8[0] = stopwatchMinute / 10; // 显示分钟十位
         LED8[1] = stopwatchMinute % 10; // 显示分钟个位
         LED8[2] = 16;
@@ -772,7 +816,6 @@ void Timer0() interrupt 1
         LED8[5] = 16;
         LED8[6] = stopwatchMSecond / 100;
         LED8[7] = (stopwatchMSecond % 100) / 10;
-
         LED8Point = 0;
         Display(0xFF, 0xFF);
         break;
@@ -857,34 +900,6 @@ void Timer0() interrupt 1
         break;
     default:
         break;
-    }
-}
-
-void Init()
-{
-    weekDay = ((month > 2 ? (year % 100) : (year % 100) - 1) + ((month > 2 ? (year % 100) : (year % 100) - 1) / 4) + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
-
-    Chime = 0;
-
-    EA = 1;      // 开启总中断
-    IT0 = 1;     // 设置外部中断0为边沿触发方式
-    EX0 = 1;     // 允许外部中断0
-    IT1 = 1;     // 设置外部中断1为边沿触发方式
-    EX1 = 1;     // 允许外部中断1
-    PT0 = 1;     // 计时器0中断优先级为最高
-    TMOD = 0x01; // 设置计时器0工作在方式1
-    ET0 = 1;     // 允许计时器0中断
-    TR0 = 1;     // 启动计时器
-    TH0 = (65536 - INTERVAL * 1000) / 256;
-    TL0 = (65536 - INTERVAL * 1000) % 256;
-}
-
-void main()
-{
-    Init();
-    while (1)
-    {
-        ;
     }
 }
 

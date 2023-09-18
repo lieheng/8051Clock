@@ -172,10 +172,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>68</ColumnNumber>
+      <ColumnNumber>73</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>504</TopLine>
-      <CurrentLine>541</CurrentLine>
+      <TopLine>40</TopLine>
+      <CurrentLine>82</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\Clock.c</PathWithFileName>
       <FilenameWithoutPath>Clock.c</FilenameWithoutPath>
@@ -1527,9 +1527,9 @@
       <Documents>
         <Doc>
           <Name>.\Clock.c</Name>
-          <ColumnNumber>68</ColumnNumber>
-          <TopLine>504</TopLine>
-          <CurrentLine>541</CurrentLine>
+          <ColumnNumber>73</ColumnNumber>
+          <TopLine>40</TopLine>
+          <CurrentLine>82</CurrentLine>
         </Doc>
       </Documents>
     </MDIGroup>
