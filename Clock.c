@@ -5,19 +5,19 @@
 
 #define INTERVAL 10 // 间隔10毫秒
 
-#define INIT_HOUR 23   // 初始化小时
-#define INIT_MINUTE 59 // 初始化分钟
+#define INIT_HOUR 0    // 初始化小时
+#define INIT_MINUTE 0  // 初始化分钟
 #define INIT_SECOND 58 // 初始化秒
 
 #define INIT_YEAR 2023 // 初始化年
 #define INIT_MONTH 9   // 初始化月
 #define INIT_DAY 19    // 初始化日
 
-#define INIT_ALARM 0         // 初始化闹钟功能，1表示响，0表示不响
-#define INIT_ALARM_HOUR 23   // 初始化闹钟小时
-#define INIT_ALARM_MINUTE 59 // 初始化闹钟分钟
-#define INIT_ALARM_WEEKDAY 0 // 初始化闹钟星期
-#define ALARMCLOCKTIMES 6    // 闹钟响铃次数
+#define INIT_ALARM 1            // 初始化闹钟功能，1表示响，0表示不响
+#define INIT_ALARM_HOUR 0       // 初始化闹钟小时
+#define INIT_ALARM_MINUTE 1     // 初始化闹钟分钟
+#define INIT_ALARM_WEEKDAY 0x7B // 初始化闹钟星期
+#define ALARMCLOCKTIMES 6       // 闹钟响铃次数
 
 #define INIT_HOURLY_CHIME 0 // 初始化整点报时功能，1表示开，0表示关
 #define HOURLYCHIMETIMES 3  // 整点响铃次数
@@ -42,7 +42,7 @@ bit hourlyChime = INIT_HOURLY_CHIME; // 整点报时功能，1表示开，0表示关
 
 bit buttonDown = 0;            // 用于判断是否有按键按下，1为有，0为无
 bit button = 0;                // 用于判断按下的是哪个按键
-unsigned int checkCount = 0;   // 用于检查按键是长按还是短按，每按一毫秒该变量加一
+unsigned int checkCount = 0;   // 用于检查按键是长按还是短按
 unsigned char shortOrLang = 0; // 用于表示按键是长按还是短按的标志，0表示无效，1表示短按，2表示长按
 
 unsigned char line1[17] = "                ";
@@ -172,13 +172,13 @@ void Init()
 
 void ChangeMode(MODE)
 {
+    unsigned char i = 0;
     mode = MODE;
     switch (mode)
     {
     case SHOW:
         ClearChar(line1);
         ClearChar(line2);
-        ClearChar(line3);
         ClearChar(line4);
 
         line1[4] = hour / 10 + '0'; // 小时十位
@@ -201,33 +201,6 @@ void ChangeMode(MODE)
         line2[11] = day / 10 + '0'; // 日期十位
         line2[12] = day % 10 + '0'; // 日期个位
 
-        switch (weekday)
-        {
-        case 0:
-            strncpy(line3 + 6, "周日", 4);
-            break;
-        case 1:
-            strncpy(line3 + 6, "周一", 4);
-            break;
-        case 2:
-            strncpy(line3 + 6, "周二", 4);
-            break;
-        case 3:
-            strncpy(line3 + 6, "周 3", 4);
-            break;
-        case 4:
-            strncpy(line3 + 6, "周四", 4);
-            break;
-        case 5:
-            strncpy(line3 + 6, "周五", 4);
-            break;
-        case 6:
-            strncpy(line3 + 6, "周六", 4);
-            break;
-        default:
-            break;
-        }
-
         strncpy(line4 + 2, "整点报时  ", 10);
         if (hourlyChime)
             strncpy(line4 + 12, "开", 2);
@@ -236,8 +209,9 @@ void ChangeMode(MODE)
 
         LCD12864_DisplayOneLine(LINE1, line1, 16);
         LCD12864_DisplayOneLine(LINE2, line2, 16);
-        LCD12864_DisplayOneLine(LINE3, line3, 16);
         LCD12864_DisplayOneLine(LINE4, line4, 16);
+
+        UpdateWeekday();
         break;
     case STOPWATCH:
         recordNum = 0;
@@ -265,6 +239,36 @@ void ChangeMode(MODE)
         LCD12864_DisplayOneLine(LINE4, line4, 16);
 
         break;
+    case ALARMCLOCK:
+        ClearChar(line1);
+        ClearChar(line2);
+        ClearChar(line3);
+        ClearChar(line4);
+
+        line1[5] = setAlarmHour / 10 + '0';
+        line1[6] = setAlarmHour % 10 + '0';
+        line1[7] = ':';
+        line1[8] = setAlarmMinute / 10 + '0';
+        line1[9] = setAlarmMinute % 10 + '0';
+        for (i = 0; i < 7; i++)
+        {
+            if (setAlarmWeekday & (1 << i))
+                strncpy(line3 + 2 * i, "开", 2);
+            else
+                strncpy(line3 + 2 * i, "关", 2);
+        }
+        if (alarm)
+            strncpy(line3 + 14, "开", 2);
+        else
+            strncpy(line3 + 14, "关", 2);
+        strcpy(line4, "日一二");
+        line4[6] = 0xC8;
+        line4[7] = 0xFD;
+        strcpy(line4 + 8, "四五六总");
+        LCD12864_DisplayOneLine(LINE1, line1, 16);
+        LCD12864_DisplayOneLine(LINE2, line2, 16);
+        LCD12864_DisplayOneLine(LINE3, line3, 16);
+        LCD12864_DisplayOneLine(LINE4, line4, 16);
     default:
         break;
     }
@@ -273,7 +277,7 @@ void ChangeMode(MODE)
 // 检查当前按键是长按还是短按
 void Check()
 {
-    checkCount++; // 按键时间计数，每过一毫秒加一。
+    checkCount++; // 按键时间计数
 
     if (checkCount < 10 / INTERVAL) // 10ms延迟去抖动
         return;
@@ -306,7 +310,7 @@ void ShortPress()
             ChangeMode(STOPWATCH);
             break;
         case STOPWATCH:
-            mode = ALARMCLOCK;
+            ChangeMode(ALARMCLOCK);
             break;
         case STOPWATCH_START:
         case STOPWATCH_PAUSE:
@@ -399,31 +403,63 @@ void ShortPress()
             ChangeMode(SET_YEAR);
             break;
         case ALARMCLOCK_HOUR:
-            mode = ALARMCLOCK_MINUTE;
+            line1[5] = setAlarmHour / 10 + '0';
+            line1[6] = setAlarmHour % 10 + '0';
+            ChangeMode(ALARMCLOCK_MINUTE);
             break;
         case ALARMCLOCK_MINUTE:
-            mode = ALARMCLOCK_SUNDAY;
+            line1[8] = setAlarmMinute / 10 + '0';
+            line1[9] = setAlarmMinute % 10 + '0';
+            ChangeMode(ALARMCLOCK_SUNDAY);
             break;
         case ALARMCLOCK_SUNDAY:
-            mode = ALARMCLOCK_MONDAY;
+            if (setAlarmWeekday & (1 << 0))
+                strncpy(line3 + 0, "开", 2);
+            else
+                strncpy(line3 + 0, "关", 2);
+            ChangeMode(ALARMCLOCK_MONDAY);
             break;
         case ALARMCLOCK_MONDAY:
-            mode = ALARMCLOCK_TUESDAY;
+            if (setAlarmWeekday & (1 << 1))
+                strncpy(line3 + 2, "开", 2);
+            else
+                strncpy(line3 + 2, "关", 2);
+            ChangeMode(ALARMCLOCK_TUESDAY);
             break;
         case ALARMCLOCK_TUESDAY:
-            mode = ALARMCLOCK_WEDNESDAY;
+            if (setAlarmWeekday & (1 << 2))
+                strncpy(line3 + 4, "开", 2);
+            else
+                strncpy(line3 + 4, "关", 2);
+            ChangeMode(ALARMCLOCK_WEDNESDAY);
             break;
         case ALARMCLOCK_WEDNESDAY:
-            mode = ALARMCLOCK_THURSDAY;
+            if (setAlarmWeekday & (1 << 3))
+                strncpy(line3 + 6, "开", 2);
+            else
+                strncpy(line3 + 6, "关", 2);
+            ChangeMode(ALARMCLOCK_THURSDAY);
             break;
         case ALARMCLOCK_THURSDAY:
-            mode = ALARMCLOCK_FRIDAY;
+            if (setAlarmWeekday & (1 << 4))
+                strncpy(line3 + 8, "开", 2);
+            else
+                strncpy(line3 + 8, "关", 2);
+            ChangeMode(ALARMCLOCK_FRIDAY);
             break;
         case ALARMCLOCK_FRIDAY:
-            mode = ALARMCLOCK_SATURDAY;
+            if (setAlarmWeekday & (1 << 5))
+                strncpy(line3 + 10, "开", 2);
+            else
+                strncpy(line3 + 10, "关", 2);
+            ChangeMode(ALARMCLOCK_SATURDAY);
             break;
         case ALARMCLOCK_SATURDAY:
-            mode = ALARMCLOCK_HOUR;
+            if (setAlarmWeekday & (1 << 6))
+                strncpy(line3 + 12, "开", 2);
+            else
+                strncpy(line3 + 12, "关", 2);
+            ChangeMode(ALARMCLOCK_HOUR);
             break;
         default:
             break;
@@ -487,6 +523,11 @@ void ShortPress()
             break;
         case ALARMCLOCK:
             alarm = !alarm;
+            if (alarm)
+                strncpy(line3 + 14, "开", 2);
+            else
+                strncpy(line3 + 14, "关", 2);
+            LCD12864_DisplayOneLine(LINE3, line3, 16);
             break;
         case ALARMCLOCK_HOUR:
             setAlarmHour++;
@@ -584,7 +625,7 @@ void LongPress()
             alarmHour = setAlarmHour;
             alarmMinute = setAlarmMinute;
             alarmWeekday = setAlarmWeekday;
-            mode = ALARMCLOCK;
+            ChangeMode(ALARMCLOCK);
             break;
         default:
             break;
@@ -643,7 +684,7 @@ void LongPress()
             setAlarmHour = alarmHour;
             setAlarmMinute = alarmMinute;
             setAlarmWeekday = alarmWeekday;
-            mode = ALARMCLOCK;
+            ChangeMode(ALARMCLOCK);
             break;
         default:
             break;
@@ -714,7 +755,9 @@ void UpdateWeekday()
         strncpy(line3 + 6, "周二", 4);
         break;
     case 3:
-        strncpy(line3 + 6, "周 3", 4);
+        strncpy(line3 + 6, "周", 2);
+        line3[8] = 0xC8;
+        line3[9] = 0xFD;
         break;
     case 4:
         strncpy(line3 + 6, "周四", 4);
@@ -996,35 +1039,136 @@ void Timer0() interrupt 1
         LCD12864_DisplayOneLine(LINE1, line1, 16);
 
         break;
-    case ALARMCLOCK:
-
-        break;
     case ALARMCLOCK_HOUR:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            line1[5] = setAlarmHour / 10 + '0';
+            line1[6] = setAlarmHour % 10 + '0';
+        }
+        else
+        {
+            line1[5] = ' ';
+            line1[6] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE1, line1, 16);
         break;
     case ALARMCLOCK_MINUTE:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            line1[8] = setAlarmMinute / 10 + '0';
+            line1[9] = setAlarmMinute % 10 + '0';
+        }
+        else
+        {
+            line1[8] = ' ';
+            line1[9] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE1, line1, 16);
         break;
     case ALARMCLOCK_SUNDAY:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            if (setAlarmWeekday & (1 << 0))
+                strncpy(line3 + 0, "开", 2);
+            else
+                strncpy(line3 + 0, "关", 2);
+        }
+        else
+        {
+            line3[0] = ' ';
+            line3[1] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE3, line3, 16);
         break;
     case ALARMCLOCK_MONDAY:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            if (setAlarmWeekday & (1 << 1))
+                strncpy(line3 + 2, "开", 2);
+            else
+                strncpy(line3 + 2, "关", 2);
+        }
+        else
+        {
+            line3[2] = ' ';
+            line3[3] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE3, line3, 16);
         break;
     case ALARMCLOCK_TUESDAY:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            if (setAlarmWeekday & (1 << 2))
+                strncpy(line3 + 4, "开", 2);
+            else
+                strncpy(line3 + 4, "关", 2);
+        }
+        else
+        {
+            line3[4] = ' ';
+            line3[5] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE3, line3, 16);
         break;
     case ALARMCLOCK_WEDNESDAY:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            if (setAlarmWeekday & (1 << 3))
+                strncpy(line3 + 6, "开", 2);
+            else
+                strncpy(line3 + 6, "关", 2);
+        }
+        else
+        {
+            line3[6] = ' ';
+            line3[7] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE3, line3, 16);
         break;
     case ALARMCLOCK_THURSDAY:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            if (setAlarmWeekday & (1 << 4))
+                strncpy(line3 + 8, "开", 2);
+            else
+                strncpy(line3 + 8, "关", 2);
+        }
+        else
+        {
+            line3[8] = ' ';
+            line3[9] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE3, line3, 16);
         break;
     case ALARMCLOCK_FRIDAY:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            if (setAlarmWeekday & (1 << 5))
+                strncpy(line3 + 10, "开", 2);
+            else
+                strncpy(line3 + 10, "关", 2);
+        }
+        else
+        {
+            line3[10] = ' ';
+            line3[11] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE3, line3, 16);
         break;
     case ALARMCLOCK_SATURDAY:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            if (setAlarmWeekday & (1 << 6))
+                strncpy(line3 + 12, "开", 2);
+            else
+                strncpy(line3 + 12, "关", 2);
+        }
+        else
+        {
+            line3[12] = ' ';
+            line3[13] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE3, line3, 16);
         break;
     default:
         break;
