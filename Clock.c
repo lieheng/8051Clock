@@ -9,9 +9,9 @@
 #define INIT_MINUTE 59 // 初始化分钟
 #define INIT_SECOND 58 // 初始化秒
 
-#define INIT_YEAR 2020 // 初始化年
-#define INIT_MONTH 2   // 初始化月
-#define INIT_DAY 28    // 初始化日
+#define INIT_YEAR 2023 // 初始化年
+#define INIT_MONTH 9   // 初始化月
+#define INIT_DAY 19    // 初始化日
 
 #define INIT_ALARM 0         // 初始化闹钟功能，1表示响，0表示不响
 #define INIT_ALARM_HOUR 23   // 初始化闹钟小时
@@ -30,7 +30,7 @@ unsigned int xdata year = INIT_YEAR;    // 初始化年
 unsigned char xdata month = INIT_MONTH; // 初始化月
 unsigned char xdata day = INIT_DAY;     // 初始化日
 
-unsigned char weekday = 0; // 星期，星期初始化任务由init()函数负责
+unsigned char xdata weekday = 0; // 星期，星期初始化任务由init()函数负责
 
 unsigned char alarmHour = INIT_ALARM_HOUR;       // 闹钟时
 unsigned char alarmMinute = INIT_ALARM_MINUTE;   // 闹钟分
@@ -58,9 +58,13 @@ unsigned char stopwatchSecond = 0; // 秒表的秒数
 unsigned char stopwatchMinute = 0; // 秒表的分钟数
 unsigned int recordNum = 0;        // 记录次数
 
-unsigned char setAlarmHour = INIT_ALARM_HOUR;       // 设置闹钟时的变量
-unsigned char setAlarmMinute = INIT_ALARM_MINUTE;   // 设置闹钟分的变量
-unsigned char setAlarmWeekday = INIT_ALARM_WEEKDAY; // 设置闹钟星期的变量，低0位为1表示周日响，低1位为1表示周一响，以此类推
+unsigned char xdata setAlarmHour = INIT_ALARM_HOUR;       // 设置闹钟时的变量
+unsigned char xdata setAlarmMinute = INIT_ALARM_MINUTE;   // 设置闹钟分的变量
+unsigned char xdata setAlarmWeekday = INIT_ALARM_WEEKDAY; // 设置闹钟星期的变量，低0位为1表示周日响，低1位为1表示周一响，以此类推
+
+unsigned char xdata setHour = INIT_HOUR;     // 设置小时的变量
+unsigned char xdata setMinute = INIT_MINUTE; // 设置分钟的变量
+unsigned char xdata setSecond = INIT_SECOND; // 设置秒的变量
 
 enum MODE
 {
@@ -144,9 +148,9 @@ void main()
 void Init()
 {
 
-    UpdateWeekday(); // 初始化星期
-
     LCD12864_Init(); // 初始化液晶屏
+
+    UpdateWeekday(); // 初始化星期
 
     ChangeMode(SHOW);
 
@@ -209,7 +213,7 @@ void ChangeMode(MODE)
             strncpy(line3 + 6, "周二", 4);
             break;
         case 3:
-            strncpy(line3 + 6, "周三", 4);
+            strncpy(line3 + 6, "周 3", 4);
             break;
         case 4:
             strncpy(line3 + 6, "周四", 4);
@@ -259,6 +263,8 @@ void ChangeMode(MODE)
         LCD12864_DisplayOneLine(LINE2, line2, 16);
         LCD12864_DisplayOneLine(LINE3, line3, 16);
         LCD12864_DisplayOneLine(LINE4, line4, 16);
+
+        break;
     default:
         break;
     }
@@ -361,22 +367,36 @@ void ShortPress()
             ChangeMode(SHOW);
             break;
         case SET_HOUR:
-            mode = SET_MINUTE;
+            line1[4] = setHour / 10 + '0';
+            line1[5] = setHour % 10 + '0';
+            ChangeMode(SET_MINUTE);
             break;
         case SET_MINUTE:
-            mode = SET_SECOND;
+            line1[7] = setMinute / 10 + '0';
+            line1[8] = setMinute % 10 + '0';
+            ChangeMode(SET_SECOND);
             break;
         case SET_SECOND:
-            mode = SET_HOUR;
+            line1[10] = setSecond / 10 + '0';
+            line1[11] = setSecond % 10 + '0';
+            ChangeMode(SET_HOUR);
             break;
         case SET_YEAR:
-            mode = SET_MONTH;
+            line2[3] = year / 1000 + '0';     // 年份千位
+            line2[4] = year / 100 % 10 + '0'; // 年份百位
+            line2[5] = year / 10 % 10 + '0';  // 年份十位
+            line2[6] = year % 10 + '0';       // 年份个位
+            ChangeMode(SET_MONTH);
             break;
         case SET_MONTH:
-            mode = SET_DAY;
+            line2[8] = month / 10 + '0'; // 月份十位
+            line2[9] = month % 10 + '0'; // 月份个位
+            ChangeMode(SET_DAY);
             break;
         case SET_DAY:
-            mode = SET_YEAR;
+            line2[11] = day / 10 + '0'; // 日期十位
+            line2[12] = day % 10 + '0'; // 日期个位
+            ChangeMode(SET_YEAR);
             break;
         case ALARMCLOCK_HOUR:
             mode = ALARMCLOCK_MINUTE;
@@ -411,11 +431,17 @@ void ShortPress()
     }
     else
     {
-        unsigned char setHour;
-        unsigned char setMinute;
-        unsigned char setSecond;
         switch (mode)
         {
+        case SHOW:
+            hourlyChime = !hourlyChime;
+            strncpy(line4 + 2, "整点报时  ", 10);
+            if (hourlyChime)
+                strncpy(line4 + 12, "开", 2);
+            else
+                strncpy(line4 + 12, "关", 2);
+            LCD12864_DisplayOneLine(LINE4, line4, 16);
+            break;
         case SET_YEAR:
             year++;
             year %= 10000;
@@ -451,13 +477,13 @@ void ShortPress()
 
             break;
         case STOPWATCH:
-            mode = STOPWATCH_START;
+            ChangeMode(STOPWATCH_START);
             break;
         case STOPWATCH_START:
-            mode = STOPWATCH_PAUSE;
+            ChangeMode(STOPWATCH_PAUSE);
             break;
         case STOPWATCH_PAUSE:
-            mode = STOPWATCH_START;
+            ChangeMode(STOPWATCH_START);
             break;
         case ALARMCLOCK:
             alarm = !alarm;
@@ -522,7 +548,10 @@ void LongPress()
         switch (mode)
         {
         case SHOW:
-            mode = SET_HOUR;
+            setHour = hour;
+            setMinute = minute;
+            setSecond = second;
+            ChangeMode(SET_HOUR);
             break;
         case SET_YEAR:
         case SET_MONTH:
@@ -535,7 +564,9 @@ void LongPress()
         case SET_HOUR:
         case SET_MINUTE:
         case SET_SECOND:
-
+            hour = setHour;
+            minute = setMinute;
+            second = setSecond;
             ChangeMode(SHOW);
             break;
         case ALARMCLOCK:
@@ -564,13 +595,7 @@ void LongPress()
         switch (mode)
         {
         case SHOW:
-            hourlyChime = !hourlyChime;
-            strncpy(line4 + 2, "整点报时  ", 10);
-            if (hourlyChime)
-                strncpy(line4 + 12, "开", 2);
-            else
-                strncpy(line4 + 12, "关", 2);
-            LCD12864_DisplayOneLine(LINE4, line4, 16);
+            ChangeMode(SET_YEAR);
             break;
         case SET_HOUR:
         case SET_MINUTE:
@@ -669,7 +694,42 @@ void DateIncrease()
 // 更新日期
 void UpdateWeekday()
 {
-    weekday = ((month > 2 ? (year % 100) : (year % 100) - 1) + ((month > 2 ? (year % 100) : (year % 100) - 1) / 4) + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
+    weekday = (month > 2 ? (year % 100) : (year % 100) - 1) + ((month > 2 ? (year % 100) : (year % 100) - 1) / 4) + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1;
+    while (weekday < 0)
+    {
+        weekday += 7;
+    }
+    weekday %= 7;
+    ClearChar(line3);
+
+    switch (weekday)
+    {
+    case 0:
+        strncpy(line3 + 6, "周日", 4);
+        break;
+    case 1:
+        strncpy(line3 + 6, "周一", 4);
+        break;
+    case 2:
+        strncpy(line3 + 6, "周二", 4);
+        break;
+    case 3:
+        strncpy(line3 + 6, "周 3", 4);
+        break;
+    case 4:
+        strncpy(line3 + 6, "周四", 4);
+        break;
+    case 5:
+        strncpy(line3 + 6, "周五", 4);
+        break;
+    case 6:
+        strncpy(line3 + 6, "周六", 4);
+        break;
+    default:
+        break;
+    }
+
+    LCD12864_DisplayOneLine(LINE3, line3, 16);
 }
 
 // 检查日期程序，返回0表示日期无误，返回1表示日期有误
@@ -757,7 +817,6 @@ void Timer0() interrupt 1
             if (mode == SHOW)
             {
                 ClearChar(line2);
-                ClearChar(line3);
 
                 line2[3] = year / 1000 + '0';     // 年份千位
                 line2[4] = year / 100 % 10 + '0'; // 年份百位
@@ -770,35 +829,7 @@ void Timer0() interrupt 1
                 line2[11] = day / 10 + '0'; // 日期十位
                 line2[12] = day % 10 + '0'; // 日期个位
 
-                switch (weekday)
-                {
-                case 0:
-                    strncpy(line3 + 6, "周日", 4);
-                    break;
-                case 1:
-                    strncpy(line3 + 6, "周一", 4);
-                    break;
-                case 2:
-                    strncpy(line3 + 6, "周二", 4);
-                    break;
-                case 3:
-                    strncpy(line3 + 6, "周三", 4);
-                    break;
-                case 4:
-                    strncpy(line3 + 6, "周四", 4);
-                    break;
-                case 5:
-                    strncpy(line3 + 6, "周五", 4);
-                    break;
-                case 6:
-                    strncpy(line3 + 6, "周六", 4);
-                    break;
-                default:
-                    break;
-                }
-
                 LCD12864_DisplayOneLine(LINE2, line2, 16);
-                LCD12864_DisplayOneLine(LINE3, line3, 16);
             }
         }
     }
@@ -835,7 +866,7 @@ void Timer0() interrupt 1
         }
     }
 
-    if (mode == SHOW && hourlyChime == 1)
+    if (mode == SHOW && hourlyChime == 1 && minute == 0 && second < 3)
     {
         if (hourlyChimeTimes == 0 && minute == 0 && second == 0 && interruptCount == 0)
             hourlyChimeTimes = 2 * (HOURLYCHIMETIMES + 1); // 我也不知道这里为什么要加一，但事实就是它会响HOURLYCHIMETIMES-1次，所以要加一补上。
@@ -856,22 +887,86 @@ void Timer0() interrupt 1
     switch (mode)
     {
     case SET_HOUR:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            line1[4] = setHour / 10 + '0';
+            line1[5] = setHour % 10 + '0';
+        }
+        else
+        {
+            line1[4] = ' ';
+            line1[5] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE1, line1, 16);
         break;
     case SET_MINUTE:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            line1[7] = setMinute / 10 + '0';
+            line1[8] = setMinute % 10 + '0';
+        }
+        else
+        {
+            line1[7] = ' ';
+            line1[8] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE1, line1, 16);
         break;
     case SET_SECOND:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            line1[10] = setSecond / 10 + '0';
+            line1[11] = setSecond % 10 + '0';
+        }
+        else
+        {
+            line1[10] = ' ';
+            line1[11] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE1, line1, 16);
         break;
     case SET_YEAR:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            line2[3] = year / 1000 + '0';     // 年份千位
+            line2[4] = year / 100 % 10 + '0'; // 年份百位
+            line2[5] = year / 10 % 10 + '0';  // 年份十位
+            line2[6] = year % 10 + '0';       // 年份个位
+        }
+        else
+        {
+            line2[3] = ' ';
+            line2[4] = ' ';
+            line2[5] = ' ';
+            line2[6] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE2, line2, 16);
         break;
     case SET_MONTH:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            line2[8] = month / 10 + '0'; // 月份十位
+            line2[9] = month % 10 + '0'; // 月份个位
+        }
+        else
+        {
+            line2[8] = ' ';
+            line2[9] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE2, line2, 16);
         break;
     case SET_DAY:
-
+        if (interruptCount < (500 / INTERVAL))
+        {
+            line2[11] = day / 10 + '0'; // 日期十位
+            line2[12] = day % 10 + '0'; // 日期个位
+        }
+        else
+        {
+            line2[11] = ' ';
+            line2[12] = ' ';
+        }
+        LCD12864_DisplayOneLine(LINE2, line2, 16);
         break;
     case STOPWATCH_START:
         stopwatchMSecond += INTERVAL;
@@ -899,9 +994,6 @@ void Timer0() interrupt 1
         line1[11] = stopwatchMSecond / 10 % 10 + '0'; // 毫秒十位
 
         LCD12864_DisplayOneLine(LINE1, line1, 16);
-
-        break;
-    case STOPWATCH_PAUSE:
 
         break;
     case ALARMCLOCK:
