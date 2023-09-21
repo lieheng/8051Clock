@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 1   
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE CLOCK
@@ -31,13 +31,13 @@ line level    source
   22          #define INIT_HOURLY_CHIME 0 // ≥ı ºªØ’˚µ„±® ±π¶ƒ‹£¨1±Ì æø™£¨0±Ì æπÿ
   23          #define HOURLYCHIMETIMES 3  // ’˚µ„œÏ¡Â¥Œ ˝
   24          
-  25          unsigned char hour = INIT_HOUR;     // ≥ı ºªØ–° ±
-  26          unsigned char minute = INIT_MINUTE; // ≥ı ºªØ∑÷÷”
-  27          unsigned char second = INIT_SECOND; // ≥ı ºªØ√Î
+  25          unsigned char xdata hour = INIT_HOUR;     // ≥ı ºªØ–° ±
+  26          unsigned char xdata minute = INIT_MINUTE; // ≥ı ºªØ∑÷÷”
+  27          unsigned char xdata second = INIT_SECOND; // ≥ı ºªØ√Î
   28          
-  29          unsigned int year = INIT_YEAR;    // ≥ı ºªØƒÍ
-  30          unsigned char month = INIT_MONTH; // ≥ı ºªØ‘¬
-  31          unsigned char day = INIT_DAY;     // ≥ı ºªØ»’
+  29          unsigned int xdata year = INIT_YEAR;    // ≥ı ºªØƒÍ
+  30          unsigned char xdata month = INIT_MONTH; // ≥ı ºªØ‘¬
+  31          unsigned char xdata day = INIT_DAY;     // ≥ı ºªØ»’
   32          
   33          unsigned char weekday = 0; // –«∆⁄£¨–«∆⁄≥ı ºªØ»ŒŒÒ”…init()∫Ø ˝∏∫‘
   34          
@@ -55,883 +55,942 @@ line level    source
   45          unsigned int checkCount = 0;   // ”√”⁄ºÏ≤È∞¥º¸ «≥§∞¥ªπ «∂Ã∞¥£¨√ø∞¥“ª∫¡√Î∏√±‰¡øº”“ª
   46          unsigned char shortOrLang = 0; // ”√”⁄±Ì æ∞¥º¸ «≥§∞¥ªπ «∂Ã∞¥µƒ±Í÷æ£¨0±Ì æŒﬁ–ß£¨1±Ì æ∂Ã∞¥£¨2±Ì æ≥§∞¥
   47          
-  48          unsigned char line1[16] = "                ";
-  49          unsigned char line2[16] = "                ";
-  50          unsigned char line3[16] = "                ";
-  51          unsigned char line4[16] = "                ";
+  48          unsigned char line1[17] = "                ";
+  49          unsigned char line2[17] = "                ";
+  50          unsigned char line3[17] = "                ";
+  51          unsigned char line4[17] = "                ";
   52          
   53          unsigned char hourlyChimeTimes = 0; // º«¬º’˚µ„±® ±µƒœÏ¡Â¥Œ ˝
   54          unsigned char alarmClockTimes = 0;  // º«¬ºƒ÷÷”µƒœÏ¡Â¥Œ ˝
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 2   
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 2   
 
   55          
   56          unsigned int stopwatchMSecond = 0; // √Î±Ìµƒ∫¡√Î ˝
   57          unsigned char stopwatchSecond = 0; // √Î±Ìµƒ√Î ˝
   58          unsigned char stopwatchMinute = 0; // √Î±Ìµƒ∑÷÷” ˝
-  59          
-  60          unsigned char setAlarmHour = INIT_ALARM_HOUR;       // …Ë÷√ƒ÷÷” ±µƒ±‰¡ø
-  61          unsigned char setAlarmMinute = INIT_ALARM_MINUTE;   // …Ë÷√ƒ÷÷”∑÷µƒ±‰¡ø
-  62          unsigned char setAlarmWeekday = INIT_ALARM_WEEKDAY; // …Ë÷√ƒ÷÷”–«∆⁄µƒ±‰¡ø£¨µÕ0ŒªŒ™1±Ì æ÷‹»’œÏ£¨µÕ1ŒªŒ™1±Ì 
+  59          unsigned int recordNum = 0;        // º«¬º¥Œ ˝
+  60          
+  61          unsigned char setAlarmHour = INIT_ALARM_HOUR;       // …Ë÷√ƒ÷÷” ±µƒ±‰¡ø
+  62          unsigned char setAlarmMinute = INIT_ALARM_MINUTE;   // …Ë÷√ƒ÷÷”∑÷µƒ±‰¡ø
+  63          unsigned char setAlarmWeekday = INIT_ALARM_WEEKDAY; // …Ë÷√ƒ÷÷”–«∆⁄µƒ±‰¡ø£¨µÕ0ŒªŒ™1±Ì æ÷‹»’œÏ£¨µÕ1ŒªŒ™1±Ì 
              -æ÷‹“ªœÏ£¨“‘¥À¿‡Õ∆
-  63          
-  64          enum MODE
-  65          {
-  66              SHOW,                 // œ‘ æƒ£ Ω
-  67              SET_YEAR,             // …Ë÷√ƒÍƒ£ Ω
-  68              SET_MONTH,            // …Ë÷√‘¬ƒ£ Ω
-  69              SET_DAY,              // …Ë÷√»’ƒ£ Ω
-  70              SET_HOUR,             // …Ë÷√ ±ƒ£ Ω
-  71              SET_MINUTE,           // …Ë÷√∑÷ƒ£ Ω
-  72              SET_SECOND,           // …Ë÷√√Îƒ£ Ω
-  73              STOPWATCH,            // √Î±Ìƒ£ Ω
-  74              STOPWATCH_START,      // √Î±Ìº∆ ±ƒ£ Ω
-  75              STOPWATCH_PAUSE,      // √Î±Ì‘›Õ£ƒ£ Ω
-  76              ALARMCLOCK,           // ƒ÷÷”ƒ£ Ω
-  77              ALARMCLOCK_HOUR,      // …Ë÷√ƒ÷÷” ±ƒ£ Ω
-  78              ALARMCLOCK_MINUTE,    // …Ë÷√ƒ÷÷”∑÷ƒ£ Ω
-  79              ALARMCLOCK_SUNDAY,    // …Ë÷√ƒ÷÷”÷‹»’ƒ£ Ω
-  80              ALARMCLOCK_MONDAY,    // …Ë÷√ƒ÷÷”÷‹“ªƒ£ Ω
-  81              ALARMCLOCK_TUESDAY,   // …Ë÷√ƒ÷÷”÷‹∂˛ƒ£ Ω
-  82              ALARMCLOCK_WEDNESDAY, // …Ë÷√ƒ÷÷”÷‹»˝ƒ£ Ω
-  83              ALARMCLOCK_THURSDAY,  // …Ë÷√ƒ÷÷”÷‹Àƒƒ£ Ω
-  84              ALARMCLOCK_FRIDAY,    // …Ë÷√ƒ÷÷”÷‹ŒÂƒ£ Ω
-  85              ALARMCLOCK_SATURDAY   // …Ë÷√ƒ÷÷”÷‹¡˘ƒ£ Ω
-  86          };
-  87          
-  88          unsigned char mode = SHOW; // ƒ£ Ω
-  89          
-  90          unsigned int interruptCount = 0; // ÷–∂œ¥Œ ˝
-  91          
-  92          sbit Chime = P2 ^ 2; // ∑‰√˘∆˜
-  93          
-  94          sbit P3_2 = P3 ^ 2; // Õ‚≤ø÷–∂œ0µƒøÿ÷∆“˝Ω≈
-  95          sbit P3_3 = P3 ^ 3; // Õ‚≤ø÷–∂œ1µƒøÿ÷∆“˝Ω≈
-  96          
-  97          unsigned char code Seg_Date[] = {
-  98              31, // 1‘¬
-  99              28, // 2‘¬
- 100              31, // 3‘¬
- 101              30, // 4‘¬
- 102              31, // 5‘¬
- 103              30, // 6‘¬
- 104              31, // 7‘¬
- 105              31, // 8‘¬
- 106              30, // 9‘¬
- 107              31, // 10‘¬
- 108              30, // 11‘¬
- 109              31  // 12‘¬
- 110          };
- 111          
- 112          // ≥ı ºªØ∫Ø ˝
- 113          void Init();
- 114          // «–ªªƒ£ Ω
- 115          void ChangeMode(MODE);
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 3   
+  64          
+  65          enum MODE
+  66          {
+  67              SHOW,                 // œ‘ æƒ£ Ω
+  68              SET_YEAR,             // …Ë÷√ƒÍƒ£ Ω
+  69              SET_MONTH,            // …Ë÷√‘¬ƒ£ Ω
+  70              SET_DAY,              // …Ë÷√»’ƒ£ Ω
+  71              SET_HOUR,             // …Ë÷√ ±ƒ£ Ω
+  72              SET_MINUTE,           // …Ë÷√∑÷ƒ£ Ω
+  73              SET_SECOND,           // …Ë÷√√Îƒ£ Ω
+  74              STOPWATCH,            // √Î±Ìƒ£ Ω
+  75              STOPWATCH_START,      // √Î±Ìº∆ ±ƒ£ Ω
+  76              STOPWATCH_PAUSE,      // √Î±Ì‘›Õ£ƒ£ Ω
+  77              ALARMCLOCK,           // ƒ÷÷”ƒ£ Ω
+  78              ALARMCLOCK_HOUR,      // …Ë÷√ƒ÷÷” ±ƒ£ Ω
+  79              ALARMCLOCK_MINUTE,    // …Ë÷√ƒ÷÷”∑÷ƒ£ Ω
+  80              ALARMCLOCK_SUNDAY,    // …Ë÷√ƒ÷÷”÷‹»’ƒ£ Ω
+  81              ALARMCLOCK_MONDAY,    // …Ë÷√ƒ÷÷”÷‹“ªƒ£ Ω
+  82              ALARMCLOCK_TUESDAY,   // …Ë÷√ƒ÷÷”÷‹∂˛ƒ£ Ω
+  83              ALARMCLOCK_WEDNESDAY, // …Ë÷√ƒ÷÷”÷‹»˝ƒ£ Ω
+  84              ALARMCLOCK_THURSDAY,  // …Ë÷√ƒ÷÷”÷‹Àƒƒ£ Ω
+  85              ALARMCLOCK_FRIDAY,    // …Ë÷√ƒ÷÷”÷‹ŒÂƒ£ Ω
+  86              ALARMCLOCK_SATURDAY   // …Ë÷√ƒ÷÷”÷‹¡˘ƒ£ Ω
+  87          };
+  88          
+  89          unsigned char mode = SHOW; // ƒ£ Ω
+  90          
+  91          unsigned int interruptCount = 0; // ÷–∂œ¥Œ ˝
+  92          
+  93          sbit Chime = P2 ^ 2; // ∑‰√˘∆˜
+  94          
+  95          sbit P3_2 = P3 ^ 2; // Õ‚≤ø÷–∂œ0µƒøÿ÷∆“˝Ω≈
+  96          sbit P3_3 = P3 ^ 3; // Õ‚≤ø÷–∂œ1µƒøÿ÷∆“˝Ω≈
+  97          
+  98          unsigned char code Seg_Date[] = {
+  99              31, // 1‘¬
+ 100              28, // 2‘¬
+ 101              31, // 3‘¬
+ 102              30, // 4‘¬
+ 103              31, // 5‘¬
+ 104              30, // 6‘¬
+ 105              31, // 7‘¬
+ 106              31, // 8‘¬
+ 107              30, // 9‘¬
+ 108              31, // 10‘¬
+ 109              30, // 11‘¬
+ 110              31  // 12‘¬
+ 111          };
+ 112          
+ 113          // ≥ı ºªØ∫Ø ˝
+ 114          void Init();
+ 115          // «–ªªƒ£ Ω
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 3   
 
- 116          // ºÏ≤Èµ±«∞∞¥º¸ «≥§∞¥ªπ «∂Ã∞¥
- 117          void Check();
- 118          // ∞¥º¸∂Ã∞¥¥¶¿Ì≥Ã–Ú
- 119          void ShortPress();
- 120          // ∞¥º¸≥§∞¥¥¶¿Ì≥Ã–Ú
- 121          void LongPress();
- 122          // √Î ˝‘ˆº”¥¶¿Ì≥Ã–Ú
- 123          void SecondIncrease();
- 124          // »’∆⁄‘ˆº”¥¶¿Ì≥Ã–Ú
- 125          void DateIncrease();
- 126          // ∏¸–¬»’∆⁄
- 127          void UpdateWeekday();
- 128          // «Âø’◊÷∑˚¥Æ
- 129          void ClearChar(unsigned char *str);
- 130          // ºÏ≤È»’∆⁄≥Ã–Ú£¨∑µªÿ0±Ì æ»’∆⁄ŒﬁŒÛ£¨∑µªÿ1±Ì æ»’∆⁄”–ŒÛ
- 131          bit CheckDate(unsigned int year, unsigned char month, unsigned char day);
- 132          
- 133          void main()
- 134          {
- 135   1          Init();
- 136   1          while (1)
- 137   1          {
- 138   2              ;
- 139   2          }
- 140   1      }
- 141          
- 142          // ≥ı ºªØ∫Ø ˝
- 143          void Init()
- 144          {
- 145   1      
- 146   1          UpdateWeekday(); // ≥ı ºªØ–«∆⁄
- 147   1      
- 148   1          LCD12864_Init(); // ≥ı ºªØ“∫æß∆¡
- 149   1      
- 150   1          ChangeMode(SHOW);
- 151   1      
- 152   1          Chime = 0; // ≥ı ºªØ∑‰√˘∆˜“˝Ω≈Œ™0£¨∑¿÷πÀªµ∑‰√˘∆˜
- 153   1      
- 154   1          EA = 1;      // ø™∆Ù◊‹÷–∂œ
- 155   1          IT0 = 1;     // …Ë÷√Õ‚≤ø÷–∂œ0Œ™±ﬂ—ÿ¥•∑¢∑Ω Ω
- 156   1          EX0 = 1;     // ‘ –ÌÕ‚≤ø÷–∂œ0
- 157   1          IT1 = 1;     // …Ë÷√Õ‚≤ø÷–∂œ1Œ™±ﬂ—ÿ¥•∑¢∑Ω Ω
- 158   1          EX1 = 1;     // ‘ –ÌÕ‚≤ø÷–∂œ1
- 159   1          PT0 = 1;     // º∆ ±∆˜0÷–∂œ”≈œ»º∂Œ™◊Ó∏ﬂ
- 160   1          TMOD = 0x01; // …Ë÷√º∆ ±∆˜0π§◊˜‘⁄∑Ω Ω1
- 161   1          ET0 = 1;     // ‘ –Ìº∆ ±∆˜0÷–∂œ
- 162   1          TR0 = 1;     // ∆Ù∂Øº∆ ±∆˜
- 163   1      
- 164   1          TH0 = (65536 - INTERVAL * 1000) / 256;
- 165   1          TL0 = (65536 - INTERVAL * 1000) % 256;
- 166   1      }
- 167          
- 168          void ChangeMode(MODE)
- 169          {
- 170   1          mode = MODE;
- 171   1          switch (mode)
- 172   1          {
- 173   2          case SHOW:
- 174   2              ClearChar(line1);
- 175   2              ClearChar(line2);
- 176   2              ClearChar(line3);
- 177   2              ClearChar(line4);
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 4   
+ 116          void ChangeMode(MODE);
+ 117          // ºÏ≤Èµ±«∞∞¥º¸ «≥§∞¥ªπ «∂Ã∞¥
+ 118          void Check();
+ 119          // ∞¥º¸∂Ã∞¥¥¶¿Ì≥Ã–Ú
+ 120          void ShortPress();
+ 121          // ∞¥º¸≥§∞¥¥¶¿Ì≥Ã–Ú
+ 122          void LongPress();
+ 123          // √Î ˝‘ˆº”¥¶¿Ì≥Ã–Ú
+ 124          void SecondIncrease();
+ 125          // »’∆⁄‘ˆº”¥¶¿Ì≥Ã–Ú
+ 126          void DateIncrease();
+ 127          // ∏¸–¬»’∆⁄
+ 128          void UpdateWeekday();
+ 129          // «Âø’◊÷∑˚¥Æ
+ 130          void ClearChar(unsigned char *str);
+ 131          // ºÏ≤È»’∆⁄≥Ã–Ú£¨∑µªÿ0±Ì æ»’∆⁄ŒﬁŒÛ£¨∑µªÿ1±Ì æ»’∆⁄”–ŒÛ
+ 132          bit CheckDate(unsigned int year, unsigned char month, unsigned char day);
+ 133          
+ 134          void main()
+ 135          {
+ 136   1          Init();
+ 137   1          while (1)
+ 138   1          {
+ 139   2              ;
+ 140   2          }
+ 141   1      }
+ 142          
+ 143          // ≥ı ºªØ∫Ø ˝
+ 144          void Init()
+ 145          {
+ 146   1      
+ 147   1          UpdateWeekday(); // ≥ı ºªØ–«∆⁄
+ 148   1      
+ 149   1          LCD12864_Init(); // ≥ı ºªØ“∫æß∆¡
+ 150   1      
+ 151   1          ChangeMode(SHOW);
+ 152   1      
+ 153   1          Chime = 0; // ≥ı ºªØ∑‰√˘∆˜“˝Ω≈Œ™0£¨∑¿÷πÀªµ∑‰√˘∆˜
+ 154   1      
+ 155   1          EA = 1;      // ø™∆Ù◊‹÷–∂œ
+ 156   1          IT0 = 1;     // …Ë÷√Õ‚≤ø÷–∂œ0Œ™±ﬂ—ÿ¥•∑¢∑Ω Ω
+ 157   1          EX0 = 1;     // ‘ –ÌÕ‚≤ø÷–∂œ0
+ 158   1          IT1 = 1;     // …Ë÷√Õ‚≤ø÷–∂œ1Œ™±ﬂ—ÿ¥•∑¢∑Ω Ω
+ 159   1          EX1 = 1;     // ‘ –ÌÕ‚≤ø÷–∂œ1
+ 160   1          PT0 = 1;     // º∆ ±∆˜0÷–∂œ”≈œ»º∂Œ™◊Ó∏ﬂ
+ 161   1          TMOD = 0x01; // …Ë÷√º∆ ±∆˜0π§◊˜‘⁄∑Ω Ω1
+ 162   1          ET0 = 1;     // ‘ –Ìº∆ ±∆˜0÷–∂œ
+ 163   1          TR0 = 1;     // ∆Ù∂Øº∆ ±∆˜
+ 164   1      
+ 165   1          TH0 = (65536 - INTERVAL * 1000) / 256;
+ 166   1          TL0 = (65536 - INTERVAL * 1000) % 256;
+ 167   1      }
+ 168          
+ 169          void ChangeMode(MODE)
+ 170          {
+ 171   1          mode = MODE;
+ 172   1          switch (mode)
+ 173   1          {
+ 174   2          case SHOW:
+ 175   2              ClearChar(line1);
+ 176   2              ClearChar(line2);
+ 177   2              ClearChar(line3);
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 4   
 
- 178   2      
- 179   2              line1[4] = hour / 10 + '0'; // –° ± ÆŒª
- 180   2              line1[5] = hour % 10 + '0'; // –° ±∏ˆŒª
- 181   2              line1[6] = ':';
- 182   2              line1[7] = minute / 10 + '0'; // ∑÷÷” ÆŒª
- 183   2              line1[8] = minute % 10 + '0'; // ∑÷÷”∏ˆŒª
- 184   2              line1[9] = ':';
- 185   2              line1[10] = second / 10 + '0'; // √Î÷” ÆŒª
- 186   2              line1[11] = second % 10 + '0'; // √Î÷”∏ˆŒª
- 187   2      
- 188   2              line2[3] = year / 1000 + '0';     // ƒÍ∑›«ßŒª
- 189   2              line2[4] = year / 100 % 10 + '0'; // ƒÍ∑›∞ŸŒª
- 190   2              line2[5] = year / 10 % 10 + '0';  // ƒÍ∑› ÆŒª
- 191   2              line2[6] = year % 10 + '0';       // ƒÍ∑›∏ˆŒª
- 192   2              line2[7] = '-';
- 193   2              line2[8] = month / 10 + '0'; // ‘¬∑› ÆŒª
- 194   2              line2[9] = month % 10 + '0'; // ‘¬∑›∏ˆŒª
- 195   2              line2[10] = '-';
- 196   2              line2[11] = day / 10 + '0'; // »’∆⁄ ÆŒª
- 197   2              line2[12] = day % 10 + '0'; // »’∆⁄∏ˆŒª
- 198   2      
- 199   2              switch (weekday)
- 200   2              {
- 201   3              case 0:
- 202   3                  strncpy(line3 + 6, "÷‹»’", 4);
- 203   3                  break;
- 204   3              case 1:
- 205   3                  strncpy(line3 + 6, "÷‹“ª", 4);
- 206   3                  break;
- 207   3              case 2:
- 208   3                  strncpy(line3 + 6, "÷‹∂˛", 4);
- 209   3                  break;
- 210   3              case 3:
- 211   3                  strncpy(line3 + 6, "÷‹»˝", 4);
- 212   3                  break;
- 213   3              case 4:
- 214   3                  strncpy(line3 + 6, "÷‹Àƒ", 4);
- 215   3                  break;
- 216   3              case 5:
- 217   3                  strncpy(line3 + 6, "÷‹ŒÂ", 4);
- 218   3                  break;
- 219   3              case 6:
- 220   3                  strncpy(line3 + 6, "÷‹¡˘", 4);
- 221   3                  break;
- 222   3              default:
- 223   3                  break;
- 224   3              }
- 225   2      
- 226   2              strncpy(line4 + 2, "’˚µ„±® ±  ", 10);
- 227   2              if (hourlyChime)
- 228   2                  strncpy(line4 + 12, "ø™", 2);
- 229   2              else
- 230   2                  strncpy(line4 + 12, "πÿ", 2);
- 231   2      
- 232   2              LCD12864_DisplayOneLine(LINE1, line1, 16);
- 233   2              LCD12864_DisplayOneLine(LINE2, line2, 16);
- 234   2              LCD12864_DisplayOneLine(LINE3, line3, 16);
- 235   2              LCD12864_DisplayOneLine(LINE4, line4, 16);
- 236   2              break;
- 237   2          case STOPWATCH:
- 238   2              ClearChar(line1);
- 239   2              ClearChar(line2);
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 5   
+ 178   2              ClearChar(line4);
+ 179   2      
+ 180   2              line1[4] = hour / 10 + '0'; // –° ± ÆŒª
+ 181   2              line1[5] = hour % 10 + '0'; // –° ±∏ˆŒª
+ 182   2              line1[6] = ':';
+ 183   2              line1[7] = minute / 10 + '0'; // ∑÷÷” ÆŒª
+ 184   2              line1[8] = minute % 10 + '0'; // ∑÷÷”∏ˆŒª
+ 185   2              line1[9] = ':';
+ 186   2              line1[10] = second / 10 + '0'; // √Î÷” ÆŒª
+ 187   2              line1[11] = second % 10 + '0'; // √Î÷”∏ˆŒª
+ 188   2      
+ 189   2              line2[3] = year / 1000 + '0';     // ƒÍ∑›«ßŒª
+ 190   2              line2[4] = year / 100 % 10 + '0'; // ƒÍ∑›∞ŸŒª
+ 191   2              line2[5] = year / 10 % 10 + '0';  // ƒÍ∑› ÆŒª
+ 192   2              line2[6] = year % 10 + '0';       // ƒÍ∑›∏ˆŒª
+ 193   2              line2[7] = '-';
+ 194   2              line2[8] = month / 10 + '0'; // ‘¬∑› ÆŒª
+ 195   2              line2[9] = month % 10 + '0'; // ‘¬∑›∏ˆŒª
+ 196   2              line2[10] = '-';
+ 197   2              line2[11] = day / 10 + '0'; // »’∆⁄ ÆŒª
+ 198   2              line2[12] = day % 10 + '0'; // »’∆⁄∏ˆŒª
+ 199   2      
+ 200   2              switch (weekday)
+ 201   2              {
+ 202   3              case 0:
+ 203   3                  strncpy(line3 + 6, "÷‹»’", 4);
+ 204   3                  break;
+ 205   3              case 1:
+ 206   3                  strncpy(line3 + 6, "÷‹“ª", 4);
+ 207   3                  break;
+ 208   3              case 2:
+ 209   3                  strncpy(line3 + 6, "÷‹∂˛", 4);
+ 210   3                  break;
+ 211   3              case 3:
+ 212   3                  strncpy(line3 + 6, "÷‹»˝", 4);
+ 213   3                  break;
+ 214   3              case 4:
+ 215   3                  strncpy(line3 + 6, "÷‹Àƒ", 4);
+ 216   3                  break;
+ 217   3              case 5:
+ 218   3                  strncpy(line3 + 6, "÷‹ŒÂ", 4);
+ 219   3                  break;
+ 220   3              case 6:
+ 221   3                  strncpy(line3 + 6, "÷‹¡˘", 4);
+ 222   3                  break;
+ 223   3              default:
+ 224   3                  break;
+ 225   3              }
+ 226   2      
+ 227   2              strncpy(line4 + 2, "’˚µ„±® ±  ", 10);
+ 228   2              if (hourlyChime)
+ 229   2                  strncpy(line4 + 12, "ø™", 2);
+ 230   2              else
+ 231   2                  strncpy(line4 + 12, "πÿ", 2);
+ 232   2      
+ 233   2              LCD12864_DisplayOneLine(LINE1, line1, 16);
+ 234   2              LCD12864_DisplayOneLine(LINE2, line2, 16);
+ 235   2              LCD12864_DisplayOneLine(LINE3, line3, 16);
+ 236   2              LCD12864_DisplayOneLine(LINE4, line4, 16);
+ 237   2              break;
+ 238   2          case STOPWATCH:
+ 239   2              recordNum = 0;
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 5   
 
- 240   2              ClearChar(line3);
- 241   2              ClearChar(line4);
- 242   2      
- 243   2              stopwatchMinute = 0;
- 244   2              stopwatchSecond = 0;
- 245   2              stopwatchMSecond = 0;
- 246   2      
- 247   2              line1[4] = stopwatchMinute / 10 + '0'; // ∑÷÷” ÆŒª
- 248   2              line1[5] = stopwatchMinute % 10 + '0'; // ∑÷÷”∏ˆŒª
- 249   2              line1[6] = ':';
- 250   2              line1[7] = stopwatchSecond / 10 + '0'; // √Î ÆŒª
- 251   2              line1[8] = stopwatchSecond % 10 + '0'; // √Î∏ˆŒª
- 252   2              line1[9] = ':';
- 253   2              line1[10] = stopwatchMSecond / 100 + '0';     // ∫¡√Î∞ŸŒª
- 254   2              line1[11] = stopwatchMSecond / 10 % 10 + '0'; // ∫¡√Î ÆŒª
- 255   2      
- 256   2              LCD12864_DisplayOneLine(LINE1, line1, 16);
- 257   2              LCD12864_DisplayOneLine(LINE2, line2, 16);
- 258   2              LCD12864_DisplayOneLine(LINE3, line3, 16);
- 259   2              LCD12864_DisplayOneLine(LINE4, line4, 16);
- 260   2          default:
- 261   2              break;
- 262   2          }
- 263   1      }
- 264          
- 265          // ºÏ≤Èµ±«∞∞¥º¸ «≥§∞¥ªπ «∂Ã∞¥
- 266          void Check()
- 267          {
- 268   1          checkCount++; // ∞¥º¸ ±º‰º∆ ˝£¨√øπ˝“ª∫¡√Îº”“ª°£
- 269   1      
- 270   1          if (checkCount < 10 / INTERVAL) // 10ms—”≥Ÿ»•∂∂∂Ø
- 271   1              return;
- 272   1      
- 273   1          if (checkCount > 1010 / INTERVAL) // »Áπ˚∞¥œ¬ ±º‰¥Û”⁄“ª√Î£¨Œ™≥§∞¥°£
- 274   1          {
- 275   2              shortOrLang = 2;
- 276   2              checkCount = 0;
- 277   2              buttonDown = 0;
- 278   2          }
- 279   1          else // »Áπ˚∞¥œ¬ ±º‰–°”⁄“ª√Î£¨‘Ú≈–∂œ «∑ÒÀ…ø™£¨»ÙÀ…ø™£¨‘ÚŒ™∂Ã∞¥£¨∑Ò‘ÚºÃ–¯º∆ ˝°£
- 280   1          {
- 281   2              if ((button == 0 && P3_2 == 1) || (button == 1 && P3_3 == 1))
- 282   2              {
- 283   3                  shortOrLang = 1;
- 284   3                  checkCount = 0;
- 285   3                  buttonDown = 0;
- 286   3              }
- 287   2          }
- 288   1      }
- 289          
- 290          // ∞¥º¸∂Ã∞¥¥¶¿Ì≥Ã–Ú
- 291          void ShortPress()
- 292          {
- 293   1          if (button == 0) // »Áπ˚∞¥µƒ «º¸A
- 294   1          {
- 295   2              switch (mode)
- 296   2              {
- 297   3              case SHOW:
- 298   3                  ChangeMode(STOPWATCH);
- 299   3                  break;
- 300   3              case STOPWATCH:
- 301   3                  mode = ALARMCLOCK;
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 6   
+ 240   2              ClearChar(line1);
+ 241   2              ClearChar(line2);
+ 242   2              ClearChar(line3);
+ 243   2              ClearChar(line4);
+ 244   2      
+ 245   2              stopwatchMinute = 0;
+ 246   2              stopwatchSecond = 0;
+ 247   2              stopwatchMSecond = 0;
+ 248   2      
+ 249   2              line1[4] = stopwatchMinute / 10 + '0'; // ∑÷÷” ÆŒª
+ 250   2              line1[5] = stopwatchMinute % 10 + '0'; // ∑÷÷”∏ˆŒª
+ 251   2              line1[6] = ':';
+ 252   2              line1[7] = stopwatchSecond / 10 + '0'; // √Î ÆŒª
+ 253   2              line1[8] = stopwatchSecond % 10 + '0'; // √Î∏ˆŒª
+ 254   2              line1[9] = ':';
+ 255   2              line1[10] = stopwatchMSecond / 100 + '0';     // ∫¡√Î∞ŸŒª
+ 256   2              line1[11] = stopwatchMSecond / 10 % 10 + '0'; // ∫¡√Î ÆŒª
+ 257   2      
+ 258   2              LCD12864_DisplayOneLine(LINE1, line1, 16);
+ 259   2              LCD12864_DisplayOneLine(LINE2, line2, 16);
+ 260   2              LCD12864_DisplayOneLine(LINE3, line3, 16);
+ 261   2              LCD12864_DisplayOneLine(LINE4, line4, 16);
+ 262   2          default:
+ 263   2              break;
+ 264   2          }
+ 265   1      }
+ 266          
+ 267          // ºÏ≤Èµ±«∞∞¥º¸ «≥§∞¥ªπ «∂Ã∞¥
+ 268          void Check()
+ 269          {
+ 270   1          checkCount++; // ∞¥º¸ ±º‰º∆ ˝£¨√øπ˝“ª∫¡√Îº”“ª°£
+ 271   1      
+ 272   1          if (checkCount < 10 / INTERVAL) // 10ms—”≥Ÿ»•∂∂∂Ø
+ 273   1              return;
+ 274   1      
+ 275   1          if (checkCount > 1010 / INTERVAL) // »Áπ˚∞¥œ¬ ±º‰¥Û”⁄“ª√Î£¨Œ™≥§∞¥°£
+ 276   1          {
+ 277   2              shortOrLang = 2;
+ 278   2              checkCount = 0;
+ 279   2              buttonDown = 0;
+ 280   2          }
+ 281   1          else // »Áπ˚∞¥œ¬ ±º‰–°”⁄“ª√Î£¨‘Ú≈–∂œ «∑ÒÀ…ø™£¨»ÙÀ…ø™£¨‘ÚŒ™∂Ã∞¥£¨∑Ò‘ÚºÃ–¯º∆ ˝°£
+ 282   1          {
+ 283   2              if ((button == 0 && P3_2 == 1) || (button == 1 && P3_3 == 1))
+ 284   2              {
+ 285   3                  shortOrLang = 1;
+ 286   3                  checkCount = 0;
+ 287   3                  buttonDown = 0;
+ 288   3              }
+ 289   2          }
+ 290   1      }
+ 291          
+ 292          // ∞¥º¸∂Ã∞¥¥¶¿Ì≥Ã–Ú
+ 293          void ShortPress()
+ 294          {
+ 295   1          if (button == 0) // »Áπ˚∞¥µƒ «º¸A
+ 296   1          {
+ 297   2              switch (mode)
+ 298   2              {
+ 299   3              case SHOW:
+ 300   3                  ChangeMode(STOPWATCH);
+ 301   3                  break;
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 6   
 
- 302   3                  break;
- 303   3              case ALARMCLOCK:
- 304   3                  ChangeMode(SHOW);
- 305   3                  break;
- 306   3              case SET_HOUR:
- 307   3                  mode = SET_MINUTE;
- 308   3                  break;
- 309   3              case SET_MINUTE:
- 310   3                  mode = SET_SECOND;
- 311   3                  break;
- 312   3              case SET_SECOND:
- 313   3                  mode = SET_HOUR;
- 314   3                  break;
- 315   3              case SET_YEAR:
- 316   3                  mode = SET_MONTH;
- 317   3                  break;
- 318   3              case SET_MONTH:
- 319   3                  mode = SET_DAY;
- 320   3                  break;
- 321   3              case SET_DAY:
- 322   3                  mode = SET_YEAR;
- 323   3                  break;
- 324   3              case ALARMCLOCK_HOUR:
- 325   3                  mode = ALARMCLOCK_MINUTE;
- 326   3                  break;
- 327   3              case ALARMCLOCK_MINUTE:
- 328   3                  mode = ALARMCLOCK_SUNDAY;
- 329   3                  break;
- 330   3              case ALARMCLOCK_SUNDAY:
- 331   3                  mode = ALARMCLOCK_MONDAY;
- 332   3                  break;
- 333   3              case ALARMCLOCK_MONDAY:
- 334   3                  mode = ALARMCLOCK_TUESDAY;
- 335   3                  break;
- 336   3              case ALARMCLOCK_TUESDAY:
- 337   3                  mode = ALARMCLOCK_WEDNESDAY;
- 338   3                  break;
- 339   3              case ALARMCLOCK_WEDNESDAY:
- 340   3                  mode = ALARMCLOCK_THURSDAY;
- 341   3                  break;
- 342   3              case ALARMCLOCK_THURSDAY:
- 343   3                  mode = ALARMCLOCK_FRIDAY;
- 344   3                  break;
- 345   3              case ALARMCLOCK_FRIDAY:
- 346   3                  mode = ALARMCLOCK_SATURDAY;
- 347   3                  break;
- 348   3              case ALARMCLOCK_SATURDAY:
- 349   3                  mode = ALARMCLOCK_HOUR;
- 350   3                  break;
- 351   3              default:
- 352   3                  break;
- 353   3              }
- 354   2          }
- 355   1          else
- 356   1          {
- 357   2              unsigned char setHour;
- 358   2              unsigned char setMinute;
- 359   2              unsigned char setSecond;
- 360   2              switch (mode)
- 361   2              {
- 362   3              case SET_YEAR:
- 363   3                  year++;
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 7   
+ 302   3              case STOPWATCH:
+ 303   3                  mode = ALARMCLOCK;
+ 304   3                  break;
+ 305   3              case STOPWATCH_START:
+ 306   3              case STOPWATCH_PAUSE:
+ 307   3                  recordNum++;
+ 308   3                  if (recordNum % 3 == 1)
+ 309   3                  {
+ 310   4      
+ 311   4                      ClearChar(line2);
+ 312   4                      line2[0] = (recordNum % 1000) / 100 + '0';
+ 313   4                      line2[1] = (recordNum % 100) / 10 + '0';
+ 314   4                      line2[2] = (recordNum % 10) + '0';
+ 315   4                      line2[4] = stopwatchMinute / 10 + '0'; // ∑÷÷” ÆŒª
+ 316   4                      line2[5] = stopwatchMinute % 10 + '0'; // ∑÷÷”∏ˆŒª
+ 317   4                      line2[6] = ':';
+ 318   4                      line2[7] = stopwatchSecond / 10 + '0'; // √Î ÆŒª
+ 319   4                      line2[8] = stopwatchSecond % 10 + '0'; // √Î∏ˆŒª
+ 320   4                      line2[9] = ':';
+ 321   4                      line2[10] = stopwatchMSecond / 100 + '0';     // ∫¡√Î∞ŸŒª
+ 322   4                      line2[11] = stopwatchMSecond / 10 % 10 + '0'; // ∫¡√Î ÆŒª
+ 323   4      
+ 324   4                      LCD12864_DisplayOneLine(LINE2, line2, 16);
+ 325   4                  }
+ 326   3                  else if (recordNum % 3 == 2)
+ 327   3                  {
+ 328   4                      ClearChar(line3);
+ 329   4                      line3[0] = (recordNum % 1000) / 100 + '0';
+ 330   4                      line3[1] = (recordNum % 100) / 10 + '0';
+ 331   4                      line3[2] = (recordNum % 10) + '0';
+ 332   4                      line3[4] = stopwatchMinute / 10 + '0'; // ∑÷÷” ÆŒª
+ 333   4                      line3[5] = stopwatchMinute % 10 + '0'; // ∑÷÷”∏ˆŒª
+ 334   4                      line3[6] = ':';
+ 335   4                      line3[7] = stopwatchSecond / 10 + '0'; // √Î ÆŒª
+ 336   4                      line3[8] = stopwatchSecond % 10 + '0'; // √Î∏ˆŒª
+ 337   4                      line3[9] = ':';
+ 338   4                      line3[10] = stopwatchMSecond / 100 + '0';     // ∫¡√Î∞ŸŒª
+ 339   4                      line3[11] = stopwatchMSecond / 10 % 10 + '0'; // ∫¡√Î ÆŒª
+ 340   4                      LCD12864_DisplayOneLine(LINE3, line3, 16);
+ 341   4                  }
+ 342   3                  else
+ 343   3                  {
+ 344   4                      ClearChar(line4);
+ 345   4                      line4[0] = (recordNum % 1000) / 100 + '0';
+ 346   4                      line4[1] = (recordNum % 100) / 10 + '0';
+ 347   4                      line4[2] = (recordNum % 10) + '0';
+ 348   4                      line4[4] = stopwatchMinute / 10 + '0'; // ∑÷÷” ÆŒª
+ 349   4                      line4[5] = stopwatchMinute % 10 + '0'; // ∑÷÷”∏ˆŒª
+ 350   4                      line4[6] = ':';
+ 351   4                      line4[7] = stopwatchSecond / 10 + '0'; // √Î ÆŒª
+ 352   4                      line4[8] = stopwatchSecond % 10 + '0'; // √Î∏ˆŒª
+ 353   4                      line4[9] = ':';
+ 354   4                      line4[10] = stopwatchMSecond / 100 + '0';     // ∫¡√Î∞ŸŒª
+ 355   4                      line4[11] = stopwatchMSecond / 10 % 10 + '0'; // ∫¡√Î ÆŒª
+ 356   4                      LCD12864_DisplayOneLine(LINE4, line4, 16);
+ 357   4                  }
+ 358   3      
+ 359   3                  break;
+ 360   3              case ALARMCLOCK:
+ 361   3                  ChangeMode(SHOW);
+ 362   3                  break;
+ 363   3              case SET_HOUR:
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 7   
 
- 364   3                  year %= 10000;
- 365   3      
- 366   3                  UpdateWeekday();
- 367   3                  break;
- 368   3              case SET_MONTH:
- 369   3                  month = (month % 12) + 1;
- 370   3      
- 371   3                  UpdateWeekday();
- 372   3                  break;
- 373   3              case SET_DAY:
- 374   3                  if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2) // »ÚƒÍ2‘¬
- 375   3                      day = (day % 29) + 1;
- 376   3                  else
- 377   3                      day = (day % Seg_Date[month - 1]) + 1;
- 378   3      
- 379   3                  UpdateWeekday();
+ 364   3                  mode = SET_MINUTE;
+ 365   3                  break;
+ 366   3              case SET_MINUTE:
+ 367   3                  mode = SET_SECOND;
+ 368   3                  break;
+ 369   3              case SET_SECOND:
+ 370   3                  mode = SET_HOUR;
+ 371   3                  break;
+ 372   3              case SET_YEAR:
+ 373   3                  mode = SET_MONTH;
+ 374   3                  break;
+ 375   3              case SET_MONTH:
+ 376   3                  mode = SET_DAY;
+ 377   3                  break;
+ 378   3              case SET_DAY:
+ 379   3                  mode = SET_YEAR;
  380   3                  break;
- 381   3              case SET_HOUR:
- 382   3                  setHour++;
- 383   3                  setHour %= 24;
- 384   3      
- 385   3                  break;
- 386   3              case SET_MINUTE:
- 387   3                  setMinute++;
- 388   3                  setMinute %= 60;
- 389   3      
- 390   3                  break;
- 391   3              case SET_SECOND:
- 392   3                  setSecond++;
- 393   3                  setSecond %= 60;
- 394   3      
+ 381   3              case ALARMCLOCK_HOUR:
+ 382   3                  mode = ALARMCLOCK_MINUTE;
+ 383   3                  break;
+ 384   3              case ALARMCLOCK_MINUTE:
+ 385   3                  mode = ALARMCLOCK_SUNDAY;
+ 386   3                  break;
+ 387   3              case ALARMCLOCK_SUNDAY:
+ 388   3                  mode = ALARMCLOCK_MONDAY;
+ 389   3                  break;
+ 390   3              case ALARMCLOCK_MONDAY:
+ 391   3                  mode = ALARMCLOCK_TUESDAY;
+ 392   3                  break;
+ 393   3              case ALARMCLOCK_TUESDAY:
+ 394   3                  mode = ALARMCLOCK_WEDNESDAY;
  395   3                  break;
- 396   3              case STOPWATCH:
- 397   3                  mode = STOPWATCH_START;
+ 396   3              case ALARMCLOCK_WEDNESDAY:
+ 397   3                  mode = ALARMCLOCK_THURSDAY;
  398   3                  break;
- 399   3              case STOPWATCH_START:
- 400   3                  mode = STOPWATCH_PAUSE;
+ 399   3              case ALARMCLOCK_THURSDAY:
+ 400   3                  mode = ALARMCLOCK_FRIDAY;
  401   3                  break;
- 402   3              case STOPWATCH_PAUSE:
- 403   3                  mode = STOPWATCH_START;
+ 402   3              case ALARMCLOCK_FRIDAY:
+ 403   3                  mode = ALARMCLOCK_SATURDAY;
  404   3                  break;
- 405   3              case ALARMCLOCK:
- 406   3                  alarm = !alarm;
+ 405   3              case ALARMCLOCK_SATURDAY:
+ 406   3                  mode = ALARMCLOCK_HOUR;
  407   3                  break;
- 408   3              case ALARMCLOCK_HOUR:
- 409   3                  setAlarmHour++;
- 410   3                  setAlarmHour %= 24;
- 411   3      
- 412   3                  break;
- 413   3              case ALARMCLOCK_MINUTE:
- 414   3                  setAlarmMinute++;
- 415   3                  setAlarmMinute %= 60;
- 416   3      
- 417   3                  break;
- 418   3              case ALARMCLOCK_SUNDAY:
- 419   3      
- 420   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 0); // µÕ0Œª»°∑¥
- 421   3      
- 422   3                  break;
- 423   3              case ALARMCLOCK_MONDAY:
- 424   3      
- 425   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 1); // µÕ1Œª»°∑¥
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 8   
+ 408   3              default:
+ 409   3                  break;
+ 410   3              }
+ 411   2          }
+ 412   1          else
+ 413   1          {
+ 414   2              unsigned char setHour;
+ 415   2              unsigned char setMinute;
+ 416   2              unsigned char setSecond;
+ 417   2              switch (mode)
+ 418   2              {
+ 419   3              case SET_YEAR:
+ 420   3                  year++;
+ 421   3                  year %= 10000;
+ 422   3      
+ 423   3                  UpdateWeekday();
+ 424   3                  break;
+ 425   3              case SET_MONTH:
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 8   
 
- 426   3      
- 427   3                  break;
- 428   3              case ALARMCLOCK_TUESDAY:
- 429   3      
- 430   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 2); // µÕ2Œª»°∑¥
- 431   3      
- 432   3                  break;
- 433   3              case ALARMCLOCK_WEDNESDAY:;
- 434   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 3); // µÕ3Œª»°∑¥
+ 426   3                  month = (month % 12) + 1;
+ 427   3      
+ 428   3                  UpdateWeekday();
+ 429   3                  break;
+ 430   3              case SET_DAY:
+ 431   3                  if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2) // »ÚƒÍ2‘¬
+ 432   3                      day = (day % 29) + 1;
+ 433   3                  else
+ 434   3                      day = (day % Seg_Date[month - 1]) + 1;
  435   3      
- 436   3                  break;
- 437   3              case ALARMCLOCK_THURSDAY:
- 438   3      
- 439   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 4); // µÕ4Œª»°∑¥
- 440   3      
- 441   3                  break;
- 442   3              case ALARMCLOCK_FRIDAY:
- 443   3      
- 444   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 5); // µÕ5Œª»°∑¥
- 445   3      
- 446   3                  break;
- 447   3              case ALARMCLOCK_SATURDAY:
- 448   3      
- 449   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 6); // µÕ6Œª»°∑¥
- 450   3      
- 451   3                  break;
- 452   3              default:
- 453   3                  break;
- 454   3              }
- 455   2          }
- 456   1      
- 457   1          shortOrLang = 0; // ÷ÿ÷√∞¥º¸±Í÷æ
- 458   1      }
- 459          
- 460          // ∞¥º¸≥§∞¥¥¶¿Ì≥Ã–Ú
- 461          void LongPress()
- 462          {
- 463   1          if (button == 0) // »Áπ˚∞¥µƒ «º¸A
- 464   1          {
- 465   2              switch (mode)
- 466   2              {
- 467   3              case SHOW:
- 468   3                  mode = SET_HOUR;
+ 436   3                  UpdateWeekday();
+ 437   3                  break;
+ 438   3              case SET_HOUR:
+ 439   3                  setHour++;
+ 440   3                  setHour %= 24;
+ 441   3      
+ 442   3                  break;
+ 443   3              case SET_MINUTE:
+ 444   3                  setMinute++;
+ 445   3                  setMinute %= 60;
+ 446   3      
+ 447   3                  break;
+ 448   3              case SET_SECOND:
+ 449   3                  setSecond++;
+ 450   3                  setSecond %= 60;
+ 451   3      
+ 452   3                  break;
+ 453   3              case STOPWATCH:
+ 454   3                  mode = STOPWATCH_START;
+ 455   3                  break;
+ 456   3              case STOPWATCH_START:
+ 457   3                  mode = STOPWATCH_PAUSE;
+ 458   3                  break;
+ 459   3              case STOPWATCH_PAUSE:
+ 460   3                  mode = STOPWATCH_START;
+ 461   3                  break;
+ 462   3              case ALARMCLOCK:
+ 463   3                  alarm = !alarm;
+ 464   3                  break;
+ 465   3              case ALARMCLOCK_HOUR:
+ 466   3                  setAlarmHour++;
+ 467   3                  setAlarmHour %= 24;
+ 468   3      
  469   3                  break;
- 470   3              case SET_YEAR:
- 471   3              case SET_MONTH:
- 472   3              case SET_DAY:
- 473   3                  if (!CheckDate(year, month, day)) // »Áπ˚»’∆⁄ŒﬁŒÛ≤≈ƒ‹»∑∂®
- 474   3                  {
- 475   4                      ChangeMode(SHOW);
- 476   4                  }
- 477   3                  break;
- 478   3              case SET_HOUR:
- 479   3              case SET_MINUTE:
- 480   3              case SET_SECOND:
+ 470   3              case ALARMCLOCK_MINUTE:
+ 471   3                  setAlarmMinute++;
+ 472   3                  setAlarmMinute %= 60;
+ 473   3      
+ 474   3                  break;
+ 475   3              case ALARMCLOCK_SUNDAY:
+ 476   3      
+ 477   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 0); // µÕ0Œª»°∑¥
+ 478   3      
+ 479   3                  break;
+ 480   3              case ALARMCLOCK_MONDAY:
  481   3      
- 482   3                  ChangeMode(SHOW);
- 483   3                  break;
- 484   3              case ALARMCLOCK:
- 485   3                  mode = ALARMCLOCK_HOUR;
- 486   3                  break;
- 487   3              case ALARMCLOCK_HOUR:
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 9   
+ 482   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 1); // µÕ1Œª»°∑¥
+ 483   3      
+ 484   3                  break;
+ 485   3              case ALARMCLOCK_TUESDAY:
+ 486   3      
+ 487   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 2); // µÕ2Œª»°∑¥
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 9   
 
- 488   3              case ALARMCLOCK_MINUTE:
- 489   3              case ALARMCLOCK_SUNDAY:
- 490   3              case ALARMCLOCK_MONDAY:
- 491   3              case ALARMCLOCK_TUESDAY:
- 492   3              case ALARMCLOCK_WEDNESDAY:
- 493   3              case ALARMCLOCK_THURSDAY:
- 494   3              case ALARMCLOCK_FRIDAY:
- 495   3              case ALARMCLOCK_SATURDAY:
- 496   3                  alarmHour = setAlarmHour;
- 497   3                  alarmMinute = setAlarmMinute;
- 498   3                  alarmWeekday = setAlarmWeekday;
- 499   3                  mode = ALARMCLOCK;
- 500   3                  break;
- 501   3              default:
- 502   3                  break;
- 503   3              }
- 504   2          }
- 505   1          else
- 506   1          {
- 507   2              switch (mode)
- 508   2              {
- 509   3              case SHOW:
- 510   3                  hourlyChime = !hourlyChime;
- 511   3                  strncpy(line4 + 2, "’˚µ„±® ±  ", 10);
- 512   3                  if (hourlyChime)
- 513   3                      strncpy(line4 + 12, "ø™", 2);
- 514   3                  else
- 515   3                      strncpy(line4 + 12, "πÿ", 2);
- 516   3                  LCD12864_DisplayOneLine(LINE4, line4, 16);
- 517   3                  break;
- 518   3              case SET_HOUR:
- 519   3              case SET_MINUTE:
- 520   3              case SET_SECOND:
- 521   3                  ChangeMode(SHOW);
- 522   3                  break;
- 523   3              case SET_YEAR:
- 524   3                  year--;
- 525   3                  year %= 10000;
- 526   3      
- 527   3                  UpdateWeekday();
- 528   3                  break;
- 529   3              case SET_MONTH:
- 530   3                  month += 10;
- 531   3                  month = (month % 12) + 1;
- 532   3      
- 533   3                  UpdateWeekday();
+ 488   3      
+ 489   3                  break;
+ 490   3              case ALARMCLOCK_WEDNESDAY:;
+ 491   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 3); // µÕ3Œª»°∑¥
+ 492   3      
+ 493   3                  break;
+ 494   3              case ALARMCLOCK_THURSDAY:
+ 495   3      
+ 496   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 4); // µÕ4Œª»°∑¥
+ 497   3      
+ 498   3                  break;
+ 499   3              case ALARMCLOCK_FRIDAY:
+ 500   3      
+ 501   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 5); // µÕ5Œª»°∑¥
+ 502   3      
+ 503   3                  break;
+ 504   3              case ALARMCLOCK_SATURDAY:
+ 505   3      
+ 506   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 6); // µÕ6Œª»°∑¥
+ 507   3      
+ 508   3                  break;
+ 509   3              default:
+ 510   3                  break;
+ 511   3              }
+ 512   2          }
+ 513   1      
+ 514   1          shortOrLang = 0; // ÷ÿ÷√∞¥º¸±Í÷æ
+ 515   1      }
+ 516          
+ 517          // ∞¥º¸≥§∞¥¥¶¿Ì≥Ã–Ú
+ 518          void LongPress()
+ 519          {
+ 520   1          if (button == 0) // »Áπ˚∞¥µƒ «º¸A
+ 521   1          {
+ 522   2              switch (mode)
+ 523   2              {
+ 524   3              case SHOW:
+ 525   3                  mode = SET_HOUR;
+ 526   3                  break;
+ 527   3              case SET_YEAR:
+ 528   3              case SET_MONTH:
+ 529   3              case SET_DAY:
+ 530   3                  if (!CheckDate(year, month, day)) // »Áπ˚»’∆⁄ŒﬁŒÛ≤≈ƒ‹»∑∂®
+ 531   3                  {
+ 532   4                      ChangeMode(SHOW);
+ 533   4                  }
  534   3                  break;
- 535   3              case SET_DAY:
- 536   3                  if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2)
- 537   3                  {
- 538   4                      day += 29 - 2;
- 539   4                      day = (day % 29) + 1;
- 540   4                  }
- 541   3                  else
- 542   3                  {
- 543   4                      day += Seg_Date[month - 1] - 2;
- 544   4                      day = (day % Seg_Date[month - 1]) + 1;
- 545   4                  }
- 546   3      
- 547   3                  UpdateWeekday();
- 548   3                  break;
- 549   3              case STOPWATCH_PAUSE:
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 10  
+ 535   3              case SET_HOUR:
+ 536   3              case SET_MINUTE:
+ 537   3              case SET_SECOND:
+ 538   3      
+ 539   3                  ChangeMode(SHOW);
+ 540   3                  break;
+ 541   3              case ALARMCLOCK:
+ 542   3                  mode = ALARMCLOCK_HOUR;
+ 543   3                  break;
+ 544   3              case ALARMCLOCK_HOUR:
+ 545   3              case ALARMCLOCK_MINUTE:
+ 546   3              case ALARMCLOCK_SUNDAY:
+ 547   3              case ALARMCLOCK_MONDAY:
+ 548   3              case ALARMCLOCK_TUESDAY:
+ 549   3              case ALARMCLOCK_WEDNESDAY:
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 10  
 
- 550   3                  ChangeMode(STOPWATCH);
- 551   3                  break;
- 552   3              case ALARMCLOCK_HOUR:
- 553   3              case ALARMCLOCK_MINUTE:
- 554   3              case ALARMCLOCK_SUNDAY:
- 555   3              case ALARMCLOCK_MONDAY:
- 556   3              case ALARMCLOCK_TUESDAY:
- 557   3              case ALARMCLOCK_WEDNESDAY:
- 558   3              case ALARMCLOCK_THURSDAY:
- 559   3              case ALARMCLOCK_FRIDAY:
- 560   3              case ALARMCLOCK_SATURDAY:
- 561   3                  setAlarmHour = alarmHour;
- 562   3                  setAlarmMinute = alarmMinute;
- 563   3                  setAlarmWeekday = alarmWeekday;
- 564   3                  mode = ALARMCLOCK;
- 565   3                  break;
- 566   3              default:
- 567   3                  break;
- 568   3              }
- 569   2          }
- 570   1      
- 571   1          shortOrLang = 0; // ÷ÿ÷√∞¥º¸±Í÷æ
- 572   1      }
- 573          
- 574          // √Î ˝‘ˆº”¥¶¿Ì≥Ã–Ú
- 575          void SecondIncrease()
- 576          {
- 577   1          second++;
- 578   1          if (second > 59)
- 579   1          {
- 580   2              second = 0;
- 581   2              minute++;
- 582   2          }
- 583   1      
- 584   1          if (minute > 59)
- 585   1          {
- 586   2              minute = 0;
- 587   2              hour++;
- 588   2          }
- 589   1      
- 590   1          if (hour > 23)
- 591   1          {
- 592   2              hour = 0;
- 593   2          }
- 594   1      }
- 595          
- 596          // »’∆⁄‘ˆº”¥¶¿Ì≥Ã–Ú
- 597          void DateIncrease()
- 598          {
- 599   1          day++;
- 600   1          if (CheckDate(year, month, day))
- 601   1          {
- 602   2              day = 1;
- 603   2              month++;
- 604   2              if (month > 12)
- 605   2              {
- 606   3                  month = 1;
- 607   3                  year++;
- 608   3              }
- 609   2          }
- 610   1      }
- 611          
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 11  
+ 550   3              case ALARMCLOCK_THURSDAY:
+ 551   3              case ALARMCLOCK_FRIDAY:
+ 552   3              case ALARMCLOCK_SATURDAY:
+ 553   3                  alarmHour = setAlarmHour;
+ 554   3                  alarmMinute = setAlarmMinute;
+ 555   3                  alarmWeekday = setAlarmWeekday;
+ 556   3                  mode = ALARMCLOCK;
+ 557   3                  break;
+ 558   3              default:
+ 559   3                  break;
+ 560   3              }
+ 561   2          }
+ 562   1          else
+ 563   1          {
+ 564   2              switch (mode)
+ 565   2              {
+ 566   3              case SHOW:
+ 567   3                  hourlyChime = !hourlyChime;
+ 568   3                  strncpy(line4 + 2, "’˚µ„±® ±  ", 10);
+ 569   3                  if (hourlyChime)
+ 570   3                      strncpy(line4 + 12, "ø™", 2);
+ 571   3                  else
+ 572   3                      strncpy(line4 + 12, "πÿ", 2);
+ 573   3                  LCD12864_DisplayOneLine(LINE4, line4, 16);
+ 574   3                  break;
+ 575   3              case SET_HOUR:
+ 576   3              case SET_MINUTE:
+ 577   3              case SET_SECOND:
+ 578   3                  ChangeMode(SHOW);
+ 579   3                  break;
+ 580   3              case SET_YEAR:
+ 581   3                  year--;
+ 582   3                  year %= 10000;
+ 583   3      
+ 584   3                  UpdateWeekday();
+ 585   3                  break;
+ 586   3              case SET_MONTH:
+ 587   3                  month += 10;
+ 588   3                  month = (month % 12) + 1;
+ 589   3      
+ 590   3                  UpdateWeekday();
+ 591   3                  break;
+ 592   3              case SET_DAY:
+ 593   3                  if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2)
+ 594   3                  {
+ 595   4                      day += 29 - 2;
+ 596   4                      day = (day % 29) + 1;
+ 597   4                  }
+ 598   3                  else
+ 599   3                  {
+ 600   4                      day += Seg_Date[month - 1] - 2;
+ 601   4                      day = (day % Seg_Date[month - 1]) + 1;
+ 602   4                  }
+ 603   3      
+ 604   3                  UpdateWeekday();
+ 605   3                  break;
+ 606   3              case STOPWATCH_PAUSE:
+ 607   3                  ChangeMode(STOPWATCH);
+ 608   3                  break;
+ 609   3              case ALARMCLOCK_HOUR:
+ 610   3              case ALARMCLOCK_MINUTE:
+ 611   3              case ALARMCLOCK_SUNDAY:
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 11  
 
- 612          // ∏¸–¬»’∆⁄
- 613          void UpdateWeekday()
- 614          {
- 615   1          weekday = ((month > 2 ? (year % 100) : (year % 100) - 1) + ((month > 2 ? (year % 100) : (year % 100) -
-             - 1) / 4) + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
- 616   1      }
- 617          
- 618          // ºÏ≤È»’∆⁄≥Ã–Ú£¨∑µªÿ0±Ì æ»’∆⁄ŒﬁŒÛ£¨∑µªÿ1±Ì æ»’∆⁄”–ŒÛ
- 619          bit CheckDate(unsigned int year, unsigned char month, unsigned char day)
- 620          {
- 621   1          if (month > 12 || month < 1)
- 622   1              return 1; // ‘¬∑›”–ŒÛ
- 623   1      
- 624   1          if (day < 1)
- 625   1              return 1; // »’∆⁄”–ŒÛ
- 626   1      
- 627   1          if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2)
- 628   1          {
- 629   2              if (day > 29)
- 630   2                  return 1; // »ÚƒÍ2‘¬29»’”–ŒÛ
- 631   2          }
- 632   1          else
- 633   1          {
- 634   2              if (day > Seg_Date[month - 1])
- 635   2                  return 1;
- 636   2          }
- 637   1      
- 638   1          return 0;
- 639   1      }
- 640          
- 641          void ClearChar(unsigned char *str)
- 642          {
- 643   1          unsigned char len = strlen(str);
- 644   1          unsigned char i = 0;
- 645   1          for (i = 0; i < len; i++)
- 646   1          {
- 647   2              str[i] = ' ';
- 648   2          }
- 649   1      }
- 650          
- 651          void Int0() interrupt 0
- 652          {
- 653   1          if (buttonDown == 0)
- 654   1          {
- 655   2              buttonDown = 1;
- 656   2              button = 0;
- 657   2          }
- 658   1      }
- 659          
- 660          void Int1() interrupt 2
- 661          {
- 662   1          if (buttonDown == 0)
- 663   1          {
- 664   2              buttonDown = 1;
- 665   2              button = 1;
+ 612   3              case ALARMCLOCK_MONDAY:
+ 613   3              case ALARMCLOCK_TUESDAY:
+ 614   3              case ALARMCLOCK_WEDNESDAY:
+ 615   3              case ALARMCLOCK_THURSDAY:
+ 616   3              case ALARMCLOCK_FRIDAY:
+ 617   3              case ALARMCLOCK_SATURDAY:
+ 618   3                  setAlarmHour = alarmHour;
+ 619   3                  setAlarmMinute = alarmMinute;
+ 620   3                  setAlarmWeekday = alarmWeekday;
+ 621   3                  mode = ALARMCLOCK;
+ 622   3                  break;
+ 623   3              default:
+ 624   3                  break;
+ 625   3              }
+ 626   2          }
+ 627   1      
+ 628   1          shortOrLang = 0; // ÷ÿ÷√∞¥º¸±Í÷æ
+ 629   1      }
+ 630          
+ 631          // √Î ˝‘ˆº”¥¶¿Ì≥Ã–Ú
+ 632          void SecondIncrease()
+ 633          {
+ 634   1          second++;
+ 635   1          if (second > 59)
+ 636   1          {
+ 637   2              second = 0;
+ 638   2              minute++;
+ 639   2          }
+ 640   1      
+ 641   1          if (minute > 59)
+ 642   1          {
+ 643   2              minute = 0;
+ 644   2              hour++;
+ 645   2          }
+ 646   1      
+ 647   1          if (hour > 23)
+ 648   1          {
+ 649   2              hour = 0;
+ 650   2          }
+ 651   1      }
+ 652          
+ 653          // »’∆⁄‘ˆº”¥¶¿Ì≥Ã–Ú
+ 654          void DateIncrease()
+ 655          {
+ 656   1          day++;
+ 657   1          if (CheckDate(year, month, day))
+ 658   1          {
+ 659   2              day = 1;
+ 660   2              month++;
+ 661   2              if (month > 12)
+ 662   2              {
+ 663   3                  month = 1;
+ 664   3                  year++;
+ 665   3              }
  666   2          }
  667   1      }
  668          
- 669          // ∂® ±∆˜0÷–∂œ∑˛ŒÒ∫Ø ˝
- 670          void Timer0() interrupt 1
+ 669          // ∏¸–¬»’∆⁄
+ 670          void UpdateWeekday()
  671          {
- 672   1          interruptCount++;
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 12  
+ 672   1          weekday = ((month > 2 ? (year % 100) : (year % 100) - 1) + ((month > 2 ? (year % 100) : (year % 100) -
+             - 1) / 4) + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 12  
 
- 673   1      
- 674   1          TH0 = (65536 - INTERVAL * 1000) / 256;
- 675   1          TL0 = (65536 - INTERVAL * 1000) % 256;
- 676   1      
- 677   1          if (interruptCount == (1000 / INTERVAL))
- 678   1          { // 1√Î
- 679   2              interruptCount = 0;
- 680   2              SecondIncrease();
- 681   2              if (mode == SHOW)
- 682   2              {
- 683   3                  ClearChar(line1);
- 684   3      
- 685   3                  line1[4] = hour / 10 + '0'; // –° ± ÆŒª
- 686   3                  line1[5] = hour % 10 + '0'; // –° ±∏ˆŒª
- 687   3                  line1[6] = ':';
- 688   3                  line1[7] = minute / 10 + '0'; // ∑÷÷” ÆŒª
- 689   3                  line1[8] = minute % 10 + '0'; // ∑÷÷”∏ˆŒª
- 690   3                  line1[9] = ':';
- 691   3                  line1[10] = second / 10 + '0'; // √Î÷” ÆŒª
- 692   3                  line1[11] = second % 10 + '0'; // √Î÷”∏ˆŒª
- 693   3      
- 694   3                  LCD12864_DisplayOneLine(LINE1, line1, 16);
- 695   3              }
- 696   2              if (hour == 0 && minute == 0 && second == 0)
- 697   2              {
- 698   3                  DateIncrease();
- 699   3                  UpdateWeekday();
- 700   3                  if (mode == SHOW)
- 701   3                  {
- 702   4                      ClearChar(line2);
- 703   4                      ClearChar(line3);
- 704   4      
- 705   4                      line2[3] = year / 1000 + '0';     // ƒÍ∑›«ßŒª
- 706   4                      line2[4] = year / 100 % 10 + '0'; // ƒÍ∑›∞ŸŒª
- 707   4                      line2[5] = year / 10 % 10 + '0';  // ƒÍ∑› ÆŒª
- 708   4                      line2[6] = year % 10 + '0';       // ƒÍ∑›∏ˆŒª
- 709   4                      line2[7] = '-';
- 710   4                      line2[8] = month / 10 + '0'; // ‘¬∑› ÆŒª
- 711   4                      line2[9] = month % 10 + '0'; // ‘¬∑›∏ˆŒª
- 712   4                      line2[10] = '-';
- 713   4                      line2[11] = day / 10 + '0'; // »’∆⁄ ÆŒª
- 714   4                      line2[12] = day % 10 + '0'; // »’∆⁄∏ˆŒª
- 715   4      
- 716   4                      switch (weekday)
- 717   4                      {
- 718   5                      case 0:
- 719   5                          strncpy(line3 + 6, "÷‹»’", 4);
- 720   5                          break;
- 721   5                      case 1:
- 722   5                          strncpy(line3 + 6, "÷‹“ª", 4);
- 723   5                          break;
- 724   5                      case 2:
- 725   5                          strncpy(line3 + 6, "÷‹∂˛", 4);
- 726   5                          break;
- 727   5                      case 3:
- 728   5                          strncpy(line3 + 6, "÷‹»˝", 4);
- 729   5                          break;
- 730   5                      case 4:
- 731   5                          strncpy(line3 + 6, "÷‹Àƒ", 4);
- 732   5                          break;
- 733   5                      case 5:
- 734   5                          strncpy(line3 + 6, "÷‹ŒÂ", 4);
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 13  
+ 673   1      }
+ 674          
+ 675          // ºÏ≤È»’∆⁄≥Ã–Ú£¨∑µªÿ0±Ì æ»’∆⁄ŒﬁŒÛ£¨∑µªÿ1±Ì æ»’∆⁄”–ŒÛ
+ 676          bit CheckDate(unsigned int year, unsigned char month, unsigned char day)
+ 677          {
+ 678   1          if (month > 12 || month < 1)
+ 679   1              return 1; // ‘¬∑›”–ŒÛ
+ 680   1      
+ 681   1          if (day < 1)
+ 682   1              return 1; // »’∆⁄”–ŒÛ
+ 683   1      
+ 684   1          if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2)
+ 685   1          {
+ 686   2              if (day > 29)
+ 687   2                  return 1; // »ÚƒÍ2‘¬29»’”–ŒÛ
+ 688   2          }
+ 689   1          else
+ 690   1          {
+ 691   2              if (day > Seg_Date[month - 1])
+ 692   2                  return 1;
+ 693   2          }
+ 694   1      
+ 695   1          return 0;
+ 696   1      }
+ 697          
+ 698          void ClearChar(unsigned char *str)
+ 699          {
+ 700   1          unsigned char len = strlen(str);
+ 701   1          unsigned char i = 0;
+ 702   1          for (i = 0; i < len; i++)
+ 703   1          {
+ 704   2              str[i] = ' ';
+ 705   2          }
+ 706   1      }
+ 707          
+ 708          void Int0() interrupt 0
+ 709          {
+ 710   1          if (buttonDown == 0)
+ 711   1          {
+ 712   2              buttonDown = 1;
+ 713   2              button = 0;
+ 714   2          }
+ 715   1      }
+ 716          
+ 717          void Int1() interrupt 2
+ 718          {
+ 719   1          if (buttonDown == 0)
+ 720   1          {
+ 721   2              buttonDown = 1;
+ 722   2              button = 1;
+ 723   2          }
+ 724   1      }
+ 725          
+ 726          // ∂® ±∆˜0÷–∂œ∑˛ŒÒ∫Ø ˝
+ 727          void Timer0() interrupt 1
+ 728          {
+ 729   1          interruptCount++;
+ 730   1      
+ 731   1          TH0 = (65536 - INTERVAL * 1000) / 256;
+ 732   1          TL0 = (65536 - INTERVAL * 1000) % 256;
+ 733   1      
+ 734   1          if (interruptCount == (1000 / INTERVAL))
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 13  
 
- 735   5                          break;
- 736   5                      case 6:
- 737   5                          strncpy(line3 + 6, "÷‹¡˘", 4);
- 738   5                          break;
- 739   5                      default:
- 740   5                          break;
- 741   5                      }
- 742   4      
- 743   4                      LCD12864_DisplayOneLine(LINE2, line2, 16);
- 744   4                      LCD12864_DisplayOneLine(LINE3, line3, 16);
- 745   4                  }
- 746   3              }
- 747   2          }
- 748   1      
- 749   1          if (buttonDown == 1)
- 750   1          {
- 751   2              Check();
- 752   2          }
- 753   1      
- 754   1          if (shortOrLang == 1)
- 755   1          {
- 756   2              ShortPress();
- 757   2          }
- 758   1          else if (shortOrLang == 2)
- 759   1          {
- 760   2              LongPress();
- 761   2          }
- 762   1      
- 763   1          if (mode == SHOW && alarm == 1)
- 764   1          {
- 765   2              if (hour == alarmHour && minute == alarmMinute && second == 00 && (alarmWeekday & (1 << weekday)) 
+ 735   1          { // 1√Î
+ 736   2              interruptCount = 0;
+ 737   2              SecondIncrease();
+ 738   2              if (mode == SHOW)
+ 739   2              {
+ 740   3                  ClearChar(line1);
+ 741   3      
+ 742   3                  line1[4] = hour / 10 + '0'; // –° ± ÆŒª
+ 743   3                  line1[5] = hour % 10 + '0'; // –° ±∏ˆŒª
+ 744   3                  line1[6] = ':';
+ 745   3                  line1[7] = minute / 10 + '0'; // ∑÷÷” ÆŒª
+ 746   3                  line1[8] = minute % 10 + '0'; // ∑÷÷”∏ˆŒª
+ 747   3                  line1[9] = ':';
+ 748   3                  line1[10] = second / 10 + '0'; // √Î÷” ÆŒª
+ 749   3                  line1[11] = second % 10 + '0'; // √Î÷”∏ˆŒª
+ 750   3      
+ 751   3                  LCD12864_DisplayOneLine(LINE1, line1, 16);
+ 752   3              }
+ 753   2              if (hour == 0 && minute == 0 && second == 0)
+ 754   2              {
+ 755   3                  DateIncrease();
+ 756   3                  UpdateWeekday();
+ 757   3                  if (mode == SHOW)
+ 758   3                  {
+ 759   4                      ClearChar(line2);
+ 760   4                      ClearChar(line3);
+ 761   4      
+ 762   4                      line2[3] = year / 1000 + '0';     // ƒÍ∑›«ßŒª
+ 763   4                      line2[4] = year / 100 % 10 + '0'; // ƒÍ∑›∞ŸŒª
+ 764   4                      line2[5] = year / 10 % 10 + '0';  // ƒÍ∑› ÆŒª
+ 765   4                      line2[6] = year % 10 + '0';       // ƒÍ∑›∏ˆŒª
+ 766   4                      line2[7] = '-';
+ 767   4                      line2[8] = month / 10 + '0'; // ‘¬∑› ÆŒª
+ 768   4                      line2[9] = month % 10 + '0'; // ‘¬∑›∏ˆŒª
+ 769   4                      line2[10] = '-';
+ 770   4                      line2[11] = day / 10 + '0'; // »’∆⁄ ÆŒª
+ 771   4                      line2[12] = day % 10 + '0'; // »’∆⁄∏ˆŒª
+ 772   4      
+ 773   4                      switch (weekday)
+ 774   4                      {
+ 775   5                      case 0:
+ 776   5                          strncpy(line3 + 6, "÷‹»’", 4);
+ 777   5                          break;
+ 778   5                      case 1:
+ 779   5                          strncpy(line3 + 6, "÷‹“ª", 4);
+ 780   5                          break;
+ 781   5                      case 2:
+ 782   5                          strncpy(line3 + 6, "÷‹∂˛", 4);
+ 783   5                          break;
+ 784   5                      case 3:
+ 785   5                          strncpy(line3 + 6, "÷‹»˝", 4);
+ 786   5                          break;
+ 787   5                      case 4:
+ 788   5                          strncpy(line3 + 6, "÷‹Àƒ", 4);
+ 789   5                          break;
+ 790   5                      case 5:
+ 791   5                          strncpy(line3 + 6, "÷‹ŒÂ", 4);
+ 792   5                          break;
+ 793   5                      case 6:
+ 794   5                          strncpy(line3 + 6, "÷‹¡˘", 4);
+ 795   5                          break;
+ 796   5                      default:
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 14  
+
+ 797   5                          break;
+ 798   5                      }
+ 799   4      
+ 800   4                      LCD12864_DisplayOneLine(LINE2, line2, 16);
+ 801   4                      LCD12864_DisplayOneLine(LINE3, line3, 16);
+ 802   4                  }
+ 803   3              }
+ 804   2          }
+ 805   1      
+ 806   1          if (buttonDown == 1)
+ 807   1          {
+ 808   2              Check();
+ 809   2          }
+ 810   1      
+ 811   1          if (shortOrLang == 1)
+ 812   1          {
+ 813   2              ShortPress();
+ 814   2          }
+ 815   1          else if (shortOrLang == 2)
+ 816   1          {
+ 817   2              LongPress();
+ 818   2          }
+ 819   1      
+ 820   1          if (mode == SHOW && alarm == 1)
+ 821   1          {
+ 822   2              if (hour == alarmHour && minute == alarmMinute && second == 00 && (alarmWeekday & (1 << weekday)) 
              -> 0 && interruptCount == 0)
- 766   2                  alarmClockTimes = 2 * ALARMCLOCKTIMES;
- 767   2              if (alarmClockTimes != 0)
- 768   2              {
- 769   3                  if ((0 < interruptCount && interruptCount < (250 / INTERVAL)) || ((500 / INTERVAL) < interrupt
+ 823   2                  alarmClockTimes = 2 * ALARMCLOCKTIMES;
+ 824   2              if (alarmClockTimes != 0)
+ 825   2              {
+ 826   3                  if ((0 < interruptCount && interruptCount < (250 / INTERVAL)) || ((500 / INTERVAL) < interrupt
              -Count && interruptCount < (750 / INTERVAL)))
- 770   3                      Chime = !Chime;
- 771   3                  else
- 772   3                      Chime = 0;
- 773   3                  if (interruptCount % (250 / INTERVAL) == 0)
- 774   3                  {
- 775   4                      alarmClockTimes--;
- 776   4                      Chime = 0;
- 777   4                  }
- 778   3              }
- 779   2          }
- 780   1      
- 781   1          if (mode == SHOW && hourlyChime == 1)
- 782   1          {
- 783   2              if (hourlyChimeTimes == 0 && minute == 0 && second == 0 && interruptCount == 0)
- 784   2                  hourlyChimeTimes = 2 * (HOURLYCHIMETIMES + 1); // Œ““≤≤ª÷™µ¿’‚¿ÔŒ™ ≤√¥“™º”“ª£¨µ´ ¬ µæÕ «À¸ª·œÏ
+ 827   3                      Chime = !Chime;
+ 828   3                  else
+ 829   3                      Chime = 0;
+ 830   3                  if (interruptCount % (250 / INTERVAL) == 0)
+ 831   3                  {
+ 832   4                      alarmClockTimes--;
+ 833   4                      Chime = 0;
+ 834   4                  }
+ 835   3              }
+ 836   2          }
+ 837   1      
+ 838   1          if (mode == SHOW && hourlyChime == 1)
+ 839   1          {
+ 840   2              if (hourlyChimeTimes == 0 && minute == 0 && second == 0 && interruptCount == 0)
+ 841   2                  hourlyChimeTimes = 2 * (HOURLYCHIMETIMES + 1); // Œ““≤≤ª÷™µ¿’‚¿ÔŒ™ ≤√¥“™º”“ª£¨µ´ ¬ µæÕ «À¸ª·œÏ
              -HOURLYCHIMETIMES-1¥Œ£¨À˘“‘“™º”“ª≤π…œ°£
- 785   2              if (hourlyChimeTimes != 0)
- 786   2              {
- 787   3                  if (interruptCount > (500 / INTERVAL))
- 788   3                      Chime = !Chime;
- 789   3                  else
- 790   3                      Chime = 0;
- 791   3                  if (interruptCount % (500 / INTERVAL) == 0)
- 792   3                  {
- 793   4                      hourlyChimeTimes--;
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 14  
+ 842   2              if (hourlyChimeTimes != 0)
+ 843   2              {
+ 844   3                  if (interruptCount > (500 / INTERVAL))
+ 845   3                      Chime = !Chime;
+ 846   3                  else
+ 847   3                      Chime = 0;
+ 848   3                  if (interruptCount % (500 / INTERVAL) == 0)
+ 849   3                  {
+ 850   4                      hourlyChimeTimes--;
+ 851   4                      Chime = 0;
+ 852   4                  }
+ 853   3              }
+ 854   2          }
+ 855   1      
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 15  
 
- 794   4                      Chime = 0;
- 795   4                  }
- 796   3              }
- 797   2          }
- 798   1      
- 799   1          switch (mode)
- 800   1          {
- 801   2          case SET_HOUR:
- 802   2      
- 803   2              break;
- 804   2          case SET_MINUTE:
- 805   2      
- 806   2              break;
- 807   2          case SET_SECOND:
- 808   2      
- 809   2              break;
- 810   2          case SET_YEAR:
- 811   2      
- 812   2              break;
- 813   2          case SET_MONTH:
- 814   2      
- 815   2              break;
- 816   2          case SET_DAY:
- 817   2      
- 818   2              break;
- 819   2          case STOPWATCH_START:
- 820   2              stopwatchMSecond += INTERVAL;
- 821   2              if (stopwatchMSecond > 999)
- 822   2              {
- 823   3                  stopwatchMSecond = 0;
- 824   3                  stopwatchSecond++;
- 825   3              }
- 826   2              if (stopwatchSecond > 59)
- 827   2              {
- 828   3                  stopwatchSecond = 0;
- 829   3                  stopwatchMinute++;
- 830   3              }
- 831   2              if (stopwatchMinute > 59)
- 832   2              {
- 833   3                  stopwatchMinute = 0;
- 834   3              }
- 835   2              line1[4] = stopwatchMinute / 10 + '0'; // ∑÷÷” ÆŒª
- 836   2              line1[5] = stopwatchMinute % 10 + '0'; // ∑÷÷”∏ˆŒª
- 837   2              line1[6] = ':';
- 838   2              line1[7] = stopwatchSecond / 10 + '0'; // √Î ÆŒª
- 839   2              line1[8] = stopwatchSecond % 10 + '0'; // √Î∏ˆŒª
- 840   2              line1[9] = ':';
- 841   2              line1[10] = stopwatchMSecond / 100 + '0';     // ∫¡√Î∞ŸŒª
- 842   2              line1[11] = stopwatchMSecond / 10 % 10 + '0'; // ∫¡√Î ÆŒª
- 843   2      
- 844   2              LCD12864_DisplayOneLine(LINE1, line1, 16);
- 845   2      
- 846   2              break;
- 847   2          case STOPWATCH_PAUSE:
- 848   2      
- 849   2              break;
- 850   2          case ALARMCLOCK:
- 851   2      
- 852   2              break;
- 853   2          case ALARMCLOCK_HOUR:
- 854   2      
- 855   2              break;
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 15  
+ 856   1          switch (mode)
+ 857   1          {
+ 858   2          case SET_HOUR:
+ 859   2      
+ 860   2              break;
+ 861   2          case SET_MINUTE:
+ 862   2      
+ 863   2              break;
+ 864   2          case SET_SECOND:
+ 865   2      
+ 866   2              break;
+ 867   2          case SET_YEAR:
+ 868   2      
+ 869   2              break;
+ 870   2          case SET_MONTH:
+ 871   2      
+ 872   2              break;
+ 873   2          case SET_DAY:
+ 874   2      
+ 875   2              break;
+ 876   2          case STOPWATCH_START:
+ 877   2              stopwatchMSecond += INTERVAL;
+ 878   2              if (stopwatchMSecond > 999)
+ 879   2              {
+ 880   3                  stopwatchMSecond = 0;
+ 881   3                  stopwatchSecond++;
+ 882   3              }
+ 883   2              if (stopwatchSecond > 59)
+ 884   2              {
+ 885   3                  stopwatchSecond = 0;
+ 886   3                  stopwatchMinute++;
+ 887   3              }
+ 888   2              if (stopwatchMinute > 59)
+ 889   2              {
+ 890   3                  stopwatchMinute = 0;
+ 891   3              }
+ 892   2              line1[4] = stopwatchMinute / 10 + '0'; // ∑÷÷” ÆŒª
+ 893   2              line1[5] = stopwatchMinute % 10 + '0'; // ∑÷÷”∏ˆŒª
+ 894   2              line1[6] = ':';
+ 895   2              line1[7] = stopwatchSecond / 10 + '0'; // √Î ÆŒª
+ 896   2              line1[8] = stopwatchSecond % 10 + '0'; // √Î∏ˆŒª
+ 897   2              line1[9] = ':';
+ 898   2              line1[10] = stopwatchMSecond / 100 + '0';     // ∫¡√Î∞ŸŒª
+ 899   2              line1[11] = stopwatchMSecond / 10 % 10 + '0'; // ∫¡√Î ÆŒª
+ 900   2      
+ 901   2              LCD12864_DisplayOneLine(LINE1, line1, 16);
+ 902   2      
+ 903   2              break;
+ 904   2          case STOPWATCH_PAUSE:
+ 905   2      
+ 906   2              break;
+ 907   2          case ALARMCLOCK:
+ 908   2      
+ 909   2              break;
+ 910   2          case ALARMCLOCK_HOUR:
+ 911   2      
+ 912   2              break;
+ 913   2          case ALARMCLOCK_MINUTE:
+ 914   2      
+ 915   2              break;
+ 916   2          case ALARMCLOCK_SUNDAY:
+ 917   2      
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 18:05:09 PAGE 16  
 
- 856   2          case ALARMCLOCK_MINUTE:
- 857   2      
- 858   2              break;
- 859   2          case ALARMCLOCK_SUNDAY:
- 860   2      
- 861   2              break;
- 862   2          case ALARMCLOCK_MONDAY:
- 863   2      
- 864   2              break;
- 865   2          case ALARMCLOCK_TUESDAY:
- 866   2      
- 867   2              break;
- 868   2          case ALARMCLOCK_WEDNESDAY:
- 869   2      
- 870   2              break;
- 871   2          case ALARMCLOCK_THURSDAY:
- 872   2      
- 873   2              break;
- 874   2          case ALARMCLOCK_FRIDAY:
- 875   2      
- 876   2              break;
- 877   2          case ALARMCLOCK_SATURDAY:
- 878   2      
- 879   2              break;
- 880   2          default:
- 881   2              break;
- 882   2          }
- 883   1      }
+ 918   2              break;
+ 919   2          case ALARMCLOCK_MONDAY:
+ 920   2      
+ 921   2              break;
+ 922   2          case ALARMCLOCK_TUESDAY:
+ 923   2      
+ 924   2              break;
+ 925   2          case ALARMCLOCK_WEDNESDAY:
+ 926   2      
+ 927   2              break;
+ 928   2          case ALARMCLOCK_THURSDAY:
+ 929   2      
+ 930   2              break;
+ 931   2          case ALARMCLOCK_FRIDAY:
+ 932   2      
+ 933   2              break;
+ 934   2          case ALARMCLOCK_SATURDAY:
+ 935   2      
+ 936   2              break;
+ 937   2          default:
+ 938   2              break;
+ 939   2          }
+ 940   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   2967    ----
+   CODE SIZE        =   3767    ----
    CONSTANT SIZE    =     63    ----
-   XDATA SIZE       =   ----    ----
+   XDATA SIZE       =      7    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =     90       6
+   DATA SIZE        =     89       6
    IDATA SIZE       =   ----    ----
    BIT SIZE         =      4    ----
 END OF MODULE INFORMATION.

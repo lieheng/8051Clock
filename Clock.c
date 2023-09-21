@@ -22,13 +22,13 @@
 #define INIT_HOURLY_CHIME 0 // 初始化整点报时功能，1表示开，0表示关
 #define HOURLYCHIMETIMES 3  // 整点响铃次数
 
-unsigned char hour = INIT_HOUR;     // 初始化小时
-unsigned char minute = INIT_MINUTE; // 初始化分钟
-unsigned char second = INIT_SECOND; // 初始化秒
+unsigned char xdata hour = INIT_HOUR;     // 初始化小时
+unsigned char xdata minute = INIT_MINUTE; // 初始化分钟
+unsigned char xdata second = INIT_SECOND; // 初始化秒
 
-unsigned int year = INIT_YEAR;    // 初始化年
-unsigned char month = INIT_MONTH; // 初始化月
-unsigned char day = INIT_DAY;     // 初始化日
+unsigned int xdata year = INIT_YEAR;    // 初始化年
+unsigned char xdata month = INIT_MONTH; // 初始化月
+unsigned char xdata day = INIT_DAY;     // 初始化日
 
 unsigned char weekday = 0; // 星期，星期初始化任务由init()函数负责
 
@@ -45,10 +45,10 @@ bit button = 0;                // 用于判断按下的是哪个按键
 unsigned int checkCount = 0;   // 用于检查按键是长按还是短按，每按一毫秒该变量加一
 unsigned char shortOrLang = 0; // 用于表示按键是长按还是短按的标志，0表示无效，1表示短按，2表示长按
 
-unsigned char line1[16] = "                ";
-unsigned char line2[16] = "                ";
-unsigned char line3[16] = "                ";
-unsigned char line4[16] = "                ";
+unsigned char line1[17] = "                ";
+unsigned char line2[17] = "                ";
+unsigned char line3[17] = "                ";
+unsigned char line4[17] = "                ";
 
 unsigned char hourlyChimeTimes = 0; // 记录整点报时的响铃次数
 unsigned char alarmClockTimes = 0;  // 记录闹钟的响铃次数
@@ -56,6 +56,7 @@ unsigned char alarmClockTimes = 0;  // 记录闹钟的响铃次数
 unsigned int stopwatchMSecond = 0; // 秒表的毫秒数
 unsigned char stopwatchSecond = 0; // 秒表的秒数
 unsigned char stopwatchMinute = 0; // 秒表的分钟数
+unsigned int recordNum = 0;        // 记录次数
 
 unsigned char setAlarmHour = INIT_ALARM_HOUR;       // 设置闹钟时的变量
 unsigned char setAlarmMinute = INIT_ALARM_MINUTE;   // 设置闹钟分的变量
@@ -235,6 +236,7 @@ void ChangeMode(MODE)
         LCD12864_DisplayOneLine(LINE4, line4, 16);
         break;
     case STOPWATCH:
+        recordNum = 0;
         ClearChar(line1);
         ClearChar(line2);
         ClearChar(line3);
@@ -299,6 +301,61 @@ void ShortPress()
             break;
         case STOPWATCH:
             mode = ALARMCLOCK;
+            break;
+        case STOPWATCH_START:
+        case STOPWATCH_PAUSE:
+            recordNum++;
+            if (recordNum % 3 == 1)
+            {
+
+                ClearChar(line2);
+                line2[0] = (recordNum % 1000) / 100 + '0';
+                line2[1] = (recordNum % 100) / 10 + '0';
+                line2[2] = (recordNum % 10) + '0';
+                line2[4] = stopwatchMinute / 10 + '0'; // 分钟十位
+                line2[5] = stopwatchMinute % 10 + '0'; // 分钟个位
+                line2[6] = ':';
+                line2[7] = stopwatchSecond / 10 + '0'; // 秒十位
+                line2[8] = stopwatchSecond % 10 + '0'; // 秒个位
+                line2[9] = ':';
+                line2[10] = stopwatchMSecond / 100 + '0';     // 毫秒百位
+                line2[11] = stopwatchMSecond / 10 % 10 + '0'; // 毫秒十位
+
+                LCD12864_DisplayOneLine(LINE2, line2, 16);
+            }
+            else if (recordNum % 3 == 2)
+            {
+                ClearChar(line3);
+                line3[0] = (recordNum % 1000) / 100 + '0';
+                line3[1] = (recordNum % 100) / 10 + '0';
+                line3[2] = (recordNum % 10) + '0';
+                line3[4] = stopwatchMinute / 10 + '0'; // 分钟十位
+                line3[5] = stopwatchMinute % 10 + '0'; // 分钟个位
+                line3[6] = ':';
+                line3[7] = stopwatchSecond / 10 + '0'; // 秒十位
+                line3[8] = stopwatchSecond % 10 + '0'; // 秒个位
+                line3[9] = ':';
+                line3[10] = stopwatchMSecond / 100 + '0';     // 毫秒百位
+                line3[11] = stopwatchMSecond / 10 % 10 + '0'; // 毫秒十位
+                LCD12864_DisplayOneLine(LINE3, line3, 16);
+            }
+            else
+            {
+                ClearChar(line4);
+                line4[0] = (recordNum % 1000) / 100 + '0';
+                line4[1] = (recordNum % 100) / 10 + '0';
+                line4[2] = (recordNum % 10) + '0';
+                line4[4] = stopwatchMinute / 10 + '0'; // 分钟十位
+                line4[5] = stopwatchMinute % 10 + '0'; // 分钟个位
+                line4[6] = ':';
+                line4[7] = stopwatchSecond / 10 + '0'; // 秒十位
+                line4[8] = stopwatchSecond % 10 + '0'; // 秒个位
+                line4[9] = ':';
+                line4[10] = stopwatchMSecond / 100 + '0';     // 毫秒百位
+                line4[11] = stopwatchMSecond / 10 % 10 + '0'; // 毫秒十位
+                LCD12864_DisplayOneLine(LINE4, line4, 16);
+            }
+
             break;
         case ALARMCLOCK:
             ChangeMode(SHOW);
