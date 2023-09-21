@@ -89,7 +89,7 @@ unsigned char mode = SHOW; // 模式
 
 unsigned int interruptCount = 0; // 中断次数
 
-sbit Chime = P2 ^ 3; // 蜂鸣器
+sbit Chime = P2 ^ 2; // 蜂鸣器
 
 sbit P3_2 = P3 ^ 2; // 外部中断0的控制引脚
 sbit P3_3 = P3 ^ 3; // 外部中断1的控制引脚
@@ -111,6 +111,8 @@ unsigned char code Seg_Date[] = {
 
 // 初始化函数
 void Init();
+// 切换模式
+void ChangeMode(MODE);
 // 检查当前按键是长按还是短按
 void Check();
 // 按键短按处理程序
@@ -123,6 +125,8 @@ void SecondIncrease();
 void DateIncrease();
 // 更新日期
 void UpdateWeekday();
+// 清空字符串
+void ClearChar(unsigned char *str);
 // 检查日期程序，返回0表示日期无误，返回1表示日期有误
 bit CheckDate(unsigned int year, unsigned char month, unsigned char day);
 
@@ -143,6 +147,8 @@ void Init()
 
     LCD12864_Init(); // 初始化液晶屏
 
+    ChangeMode(SHOW);
+
     Chime = 0; // 初始化蜂鸣器引脚为0，防止损坏蜂鸣器
 
     EA = 1;      // 开启总中断
@@ -157,6 +163,81 @@ void Init()
 
     TH0 = (65536 - INTERVAL * 1000) / 256;
     TL0 = (65536 - INTERVAL * 1000) % 256;
+}
+
+void ChangeMode(MODE)
+{
+    mode = MODE;
+    switch (mode)
+    {
+    case SHOW:
+        ClearChar(line1);
+        ClearChar(line2);
+        ClearChar(line3);
+        ClearChar(line4);
+
+        line1[4] = hour / 10 + '0'; // 小时十位
+        line1[5] = hour % 10 + '0'; // 小时个位
+        line1[6] = ':';
+        line1[7] = minute / 10 + '0'; // 分钟十位
+        line1[8] = minute % 10 + '0'; // 分钟个位
+        line1[9] = ':';
+        line1[10] = second / 10 + '0'; // 秒钟十位
+        line1[11] = second % 10 + '0'; // 秒钟个位
+
+        line2[3] = year / 1000 + '0';     // 年份千位
+        line2[4] = year / 100 % 10 + '0'; // 年份百位
+        line2[5] = year / 10 % 10 + '0';  // 年份十位
+        line2[6] = year % 10 + '0';       // 年份个位
+        line2[7] = '-';
+        line2[8] = month / 10 + '0'; // 月份十位
+        line2[9] = month % 10 + '0'; // 月份个位
+        line2[10] = '-';
+        line2[11] = day / 10 + '0'; // 日期十位
+        line2[12] = day % 10 + '0'; // 日期个位
+
+        switch (weekday)
+        {
+        case 0:
+            strncpy(line3 + 6, "周日", 4);
+            break;
+        case 1:
+            strncpy(line3 + 6, "周一", 4);
+            break;
+        case 2:
+            strncpy(line3 + 6, "周二", 4);
+            break;
+        case 3:
+            strncpy(line3 + 6, "周三", 4);
+            break;
+        case 4:
+            strncpy(line3 + 6, "周四", 4);
+            break;
+        case 5:
+            strncpy(line3 + 6, "周五", 4);
+            break;
+        case 6:
+            strncpy(line3 + 6, "周六", 4);
+            break;
+        default:
+            break;
+        }
+
+        strncpy(line4 + 2, "整点报时  ", 10);
+        if (hourlyChime)
+            strncpy(line4 + 12, "开", 2);
+        else
+            strncpy(line4 + 12, "关", 2);
+
+        LCD12864_DisplayOneLine(LINE1, line1, 16);
+        LCD12864_DisplayOneLine(LINE2, line2, 16);
+        LCD12864_DisplayOneLine(LINE3, line3, 16);
+        LCD12864_DisplayOneLine(LINE4, line4, 16);
+        break;
+
+    default:
+        break;
+    }
 }
 
 // 检查当前按键是长按还是短按
@@ -198,7 +279,7 @@ void ShortPress()
             mode = ALARMCLOCK;
             break;
         case ALARMCLOCK:
-            mode = SHOW;
+            ChangeMode(SHOW);
             break;
         case SET_HOUR:
             mode = SET_MINUTE;
@@ -369,14 +450,14 @@ void LongPress()
         case SET_DAY:
             if (!CheckDate(year, month, day)) // 如果日期无误才能确定
             {
-                mode = SHOW;
+                ChangeMode(SHOW);
             }
             break;
         case SET_HOUR:
         case SET_MINUTE:
         case SET_SECOND:
 
-            mode = SHOW;
+            ChangeMode(SHOW);
             break;
         case ALARMCLOCK:
             mode = ALARMCLOCK_HOUR;
@@ -405,11 +486,17 @@ void LongPress()
         {
         case SHOW:
             hourlyChime = !hourlyChime;
+            strncpy(line4 + 2, "整点报时  ", 10);
+            if (hourlyChime)
+                strncpy(line4 + 12, "开", 2);
+            else
+                strncpy(line4 + 12, "关", 2);
+            LCD12864_DisplayOneLine(LINE4, line4, 16);
             break;
         case SET_HOUR:
         case SET_MINUTE:
         case SET_SECOND:
-            mode = SHOW;
+            ChangeMode(SHOW);
             break;
         case SET_YEAR:
             year--;
@@ -560,7 +647,6 @@ void Int1() interrupt 2
 // 定时器0中断服务函数
 void Timer0() interrupt 1
 {
-    unsigned char *p;
     interruptCount++;
 
     TH0 = (65536 - INTERVAL * 1000) / 256;
@@ -570,10 +656,71 @@ void Timer0() interrupt 1
     { // 1秒
         interruptCount = 0;
         SecondIncrease();
+        if (mode == SHOW)
+        {
+            ClearChar(line1);
+
+            line1[4] = hour / 10 + '0'; // 小时十位
+            line1[5] = hour % 10 + '0'; // 小时个位
+            line1[6] = ':';
+            line1[7] = minute / 10 + '0'; // 分钟十位
+            line1[8] = minute % 10 + '0'; // 分钟个位
+            line1[9] = ':';
+            line1[10] = second / 10 + '0'; // 秒钟十位
+            line1[11] = second % 10 + '0'; // 秒钟个位
+
+            LCD12864_DisplayOneLine(LINE1, line1, 16);
+        }
         if (hour == 0 && minute == 0 && second == 0)
         {
             DateIncrease();
             UpdateWeekday();
+            if (mode == SHOW)
+            {
+                ClearChar(line2);
+                ClearChar(line3);
+
+                line2[3] = year / 1000 + '0';     // 年份千位
+                line2[4] = year / 100 % 10 + '0'; // 年份百位
+                line2[5] = year / 10 % 10 + '0';  // 年份十位
+                line2[6] = year % 10 + '0';       // 年份个位
+                line2[7] = '-';
+                line2[8] = month / 10 + '0'; // 月份十位
+                line2[9] = month % 10 + '0'; // 月份个位
+                line2[10] = '-';
+                line2[11] = day / 10 + '0'; // 日期十位
+                line2[12] = day % 10 + '0'; // 日期个位
+
+                switch (weekday)
+                {
+                case 0:
+                    strncpy(line3 + 6, "周日", 4);
+                    break;
+                case 1:
+                    strncpy(line3 + 6, "周一", 4);
+                    break;
+                case 2:
+                    strncpy(line3 + 6, "周二", 4);
+                    break;
+                case 3:
+                    strncpy(line3 + 6, "周三", 4);
+                    break;
+                case 4:
+                    strncpy(line3 + 6, "周四", 4);
+                    break;
+                case 5:
+                    strncpy(line3 + 6, "周五", 4);
+                    break;
+                case 6:
+                    strncpy(line3 + 6, "周六", 4);
+                    break;
+                default:
+                    break;
+                }
+
+                LCD12864_DisplayOneLine(LINE2, line2, 16);
+                LCD12864_DisplayOneLine(LINE3, line3, 16);
+            }
         }
     }
 
@@ -629,68 +776,6 @@ void Timer0() interrupt 1
 
     switch (mode)
     {
-    case SHOW:
-        ClearChar(line1);
-        ClearChar(line2);
-        ClearChar(line3);
-        ClearChar(line4);
-        line1[4] = hour / 10 + '0'; // 小时十位
-        line1[5] = hour % 10 + '0'; // 小时个位
-        line1[6] = ':';
-        line1[7] = minute / 10 + '0'; // 分钟十位
-        line1[8] = minute % 10 + '0'; // 分钟个位
-        line1[9] = ':';
-        line1[10] = second / 10 + '0'; // 秒钟十位
-        line1[11] = second % 10 + '0'; // 秒钟个位
-
-        line2[3] = year / 1000 + '0';     // 年份千位
-        line2[4] = year / 100 % 10 + '0'; // 年份百位
-        line2[5] = year / 10 % 10 + '0';  // 年份十位
-        line2[6] = year % 10 + '0';       // 年份个位
-        line2[7] = '-';
-        line2[8] = month / 10 + '0'; // 月份十位
-        line2[9] = month % 10 + '0'; // 月份个位
-        line2[10] = '-';
-        line2[11] = day / 10 + '0'; // 日期十位
-        line2[12] = day % 10 + '0'; // 日期个位
-
-        switch (weekday)
-        {
-        case 0:
-            strncpy(line3 + 6, "周日", 4);
-            break;
-        case 1:
-            strncpy(line3 + 6, "周一", 4);
-            break;
-        case 2:
-            strncpy(line3 + 6, "周二", 4);
-            break;
-        case 3:
-            strncpy(line3 + 6, "周三", 4);
-            break;
-        case 4:
-            strncpy(line3 + 6, "周四", 4);
-            break;
-        case 5:
-            strncpy(line3 + 6, "周五", 4);
-            break;
-        case 6:
-            strncpy(line3 + 6, "周六", 4);
-            break;
-        default:
-            break;
-        }
-        strncpy(line4 + 2, "整点报时  ", 10);
-        if (hourlyChime)
-            strncpy(line4 + 12, "开", 2);
-        else
-            strncpy(line4 + 12, "关", 2);
-
-        LCD12864_DisplayOneLine(LINE1, line1, 16);
-        LCD12864_DisplayOneLine(LINE2, line2, 16);
-        LCD12864_DisplayOneLine(LINE3, line3, 16);
-        LCD12864_DisplayOneLine(LINE4, line4, 16);
-        break;
     case SET_HOUR:
 
         break;

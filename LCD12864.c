@@ -33,7 +33,7 @@ void LCD12864_Init(void)
     LCD12864_PSB = 1; // 8位并口工作模式
 
     LCD12864_WriteInfomation(0x30, 0); // 基本指令集
-    LCD12864_WriteInfomation(0x0f, 0); // 游标设置
+    LCD12864_WriteInfomation(0x0c, 0); // 游标设置
     LCD12864_WriteInfomation(0x01, 0); // 清屏
     LCD12864_WriteInfomation(0x06, 0); // 进入点设定
 }
