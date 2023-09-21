@@ -1,2 +1,3 @@
-"Clock.obj" 
+"Clock.obj",
+"LCD12864.obj" 
 TO "Clock" 
