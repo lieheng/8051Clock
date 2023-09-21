@@ -234,7 +234,29 @@ void ChangeMode(MODE)
         LCD12864_DisplayOneLine(LINE3, line3, 16);
         LCD12864_DisplayOneLine(LINE4, line4, 16);
         break;
+    case STOPWATCH:
+        ClearChar(line1);
+        ClearChar(line2);
+        ClearChar(line3);
+        ClearChar(line4);
 
+        stopwatchMinute = 0;
+        stopwatchSecond = 0;
+        stopwatchMSecond = 0;
+
+        line1[4] = stopwatchMinute / 10 + '0'; // 分钟十位
+        line1[5] = stopwatchMinute % 10 + '0'; // 分钟个位
+        line1[6] = ':';
+        line1[7] = stopwatchSecond / 10 + '0'; // 秒十位
+        line1[8] = stopwatchSecond % 10 + '0'; // 秒个位
+        line1[9] = ':';
+        line1[10] = stopwatchMSecond / 100 + '0';     // 毫秒百位
+        line1[11] = stopwatchMSecond / 10 % 10 + '0'; // 毫秒十位
+
+        LCD12864_DisplayOneLine(LINE1, line1, 16);
+        LCD12864_DisplayOneLine(LINE2, line2, 16);
+        LCD12864_DisplayOneLine(LINE3, line3, 16);
+        LCD12864_DisplayOneLine(LINE4, line4, 16);
     default:
         break;
     }
@@ -273,7 +295,7 @@ void ShortPress()
         switch (mode)
         {
         case SHOW:
-            mode = STOPWATCH;
+            ChangeMode(STOPWATCH);
             break;
         case STOPWATCH:
             mode = ALARMCLOCK;
@@ -525,7 +547,7 @@ void LongPress()
             UpdateWeekday();
             break;
         case STOPWATCH_PAUSE:
-            mode = STOPWATCH;
+            ChangeMode(STOPWATCH);
             break;
         case ALARMCLOCK_HOUR:
         case ALARMCLOCK_MINUTE:
@@ -794,12 +816,6 @@ void Timer0() interrupt 1
     case SET_DAY:
 
         break;
-    case STOPWATCH:
-        stopwatchMSecond = 0;
-        stopwatchSecond = 0;
-        stopwatchMinute = 0;
-
-        break;
     case STOPWATCH_START:
         stopwatchMSecond += INTERVAL;
         if (stopwatchMSecond > 999)
@@ -816,6 +832,16 @@ void Timer0() interrupt 1
         {
             stopwatchMinute = 0;
         }
+        line1[4] = stopwatchMinute / 10 + '0'; // 分钟十位
+        line1[5] = stopwatchMinute % 10 + '0'; // 分钟个位
+        line1[6] = ':';
+        line1[7] = stopwatchSecond / 10 + '0'; // 秒十位
+        line1[8] = stopwatchSecond % 10 + '0'; // 秒个位
+        line1[9] = ':';
+        line1[10] = stopwatchMSecond / 100 + '0';     // 毫秒百位
+        line1[11] = stopwatchMSecond / 10 % 10 + '0'; // 毫秒十位
+
+        LCD12864_DisplayOneLine(LINE1, line1, 16);
 
         break;
     case STOPWATCH_PAUSE:

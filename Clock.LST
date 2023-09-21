@@ -1,4 +1,4 @@
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 1   
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 1   
 
 
 C51 COMPILER V9.01, COMPILATION OF MODULE CLOCK
@@ -62,7 +62,7 @@ line level    source
   52          
   53          unsigned char hourlyChimeTimes = 0; // 记录整点报时的响铃次数
   54          unsigned char alarmClockTimes = 0;  // 记录闹钟的响铃次数
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 2   
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 2   
 
   55          
   56          unsigned int stopwatchMSecond = 0; // 秒表的毫秒数
@@ -126,7 +126,7 @@ line level    source
  113          void Init();
  114          // 切换模式
  115          void ChangeMode(MODE);
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 3   
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 3   
 
  116          // 检查当前按键是长按还是短按
  117          void Check();
@@ -190,7 +190,7 @@ line level    source
  175   2              ClearChar(line2);
  176   2              ClearChar(line3);
  177   2              ClearChar(line4);
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 4   
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 4   
 
  178   2      
  179   2              line1[4] = hour / 10 + '0'; // 小时十位
@@ -251,657 +251,683 @@ line level    source
  234   2              LCD12864_DisplayOneLine(LINE3, line3, 16);
  235   2              LCD12864_DisplayOneLine(LINE4, line4, 16);
  236   2              break;
- 237   2      
- 238   2          default:
- 239   2              break;
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 5   
+ 237   2          case STOPWATCH:
+ 238   2              ClearChar(line1);
+ 239   2              ClearChar(line2);
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 5   
 
- 240   2          }
- 241   1      }
- 242          
- 243          // 检查当前按键是长按还是短按
- 244          void Check()
- 245          {
- 246   1          checkCount++; // 按键时间计数，每过一毫秒加一。
- 247   1      
- 248   1          if (checkCount < 10 / INTERVAL) // 10ms延迟去抖动
- 249   1              return;
- 250   1      
- 251   1          if (checkCount > 1010 / INTERVAL) // 如果按下时间大于一秒，为长按。
- 252   1          {
- 253   2              shortOrLang = 2;
- 254   2              checkCount = 0;
- 255   2              buttonDown = 0;
- 256   2          }
- 257   1          else // 如果按下时间小于一秒，则判断是否松开，若松开，则为短按，否则继续计数。
- 258   1          {
- 259   2              if ((button == 0 && P3_2 == 1) || (button == 1 && P3_3 == 1))
- 260   2              {
- 261   3                  shortOrLang = 1;
- 262   3                  checkCount = 0;
- 263   3                  buttonDown = 0;
- 264   3              }
- 265   2          }
- 266   1      }
- 267          
- 268          // 按键短按处理程序
- 269          void ShortPress()
- 270          {
- 271   1          if (button == 0) // 如果按的是键A
- 272   1          {
- 273   2              switch (mode)
- 274   2              {
- 275   3              case SHOW:
- 276   3                  mode = STOPWATCH;
- 277   3                  break;
- 278   3              case STOPWATCH:
- 279   3                  mode = ALARMCLOCK;
- 280   3                  break;
- 281   3              case ALARMCLOCK:
- 282   3                  ChangeMode(SHOW);
- 283   3                  break;
- 284   3              case SET_HOUR:
- 285   3                  mode = SET_MINUTE;
- 286   3                  break;
- 287   3              case SET_MINUTE:
- 288   3                  mode = SET_SECOND;
- 289   3                  break;
- 290   3              case SET_SECOND:
- 291   3                  mode = SET_HOUR;
- 292   3                  break;
- 293   3              case SET_YEAR:
- 294   3                  mode = SET_MONTH;
- 295   3                  break;
- 296   3              case SET_MONTH:
- 297   3                  mode = SET_DAY;
- 298   3                  break;
- 299   3              case SET_DAY:
- 300   3                  mode = SET_YEAR;
- 301   3                  break;
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 6   
+ 240   2              ClearChar(line3);
+ 241   2              ClearChar(line4);
+ 242   2      
+ 243   2              stopwatchMinute = 0;
+ 244   2              stopwatchSecond = 0;
+ 245   2              stopwatchMSecond = 0;
+ 246   2      
+ 247   2              line1[4] = stopwatchMinute / 10 + '0'; // 分钟十位
+ 248   2              line1[5] = stopwatchMinute % 10 + '0'; // 分钟个位
+ 249   2              line1[6] = ':';
+ 250   2              line1[7] = stopwatchSecond / 10 + '0'; // 秒十位
+ 251   2              line1[8] = stopwatchSecond % 10 + '0'; // 秒个位
+ 252   2              line1[9] = ':';
+ 253   2              line1[10] = stopwatchMSecond / 100 + '0';     // 毫秒百位
+ 254   2              line1[11] = stopwatchMSecond / 10 % 10 + '0'; // 毫秒十位
+ 255   2      
+ 256   2              LCD12864_DisplayOneLine(LINE1, line1, 16);
+ 257   2              LCD12864_DisplayOneLine(LINE2, line2, 16);
+ 258   2              LCD12864_DisplayOneLine(LINE3, line3, 16);
+ 259   2              LCD12864_DisplayOneLine(LINE4, line4, 16);
+ 260   2          default:
+ 261   2              break;
+ 262   2          }
+ 263   1      }
+ 264          
+ 265          // 检查当前按键是长按还是短按
+ 266          void Check()
+ 267          {
+ 268   1          checkCount++; // 按键时间计数，每过一毫秒加一。
+ 269   1      
+ 270   1          if (checkCount < 10 / INTERVAL) // 10ms延迟去抖动
+ 271   1              return;
+ 272   1      
+ 273   1          if (checkCount > 1010 / INTERVAL) // 如果按下时间大于一秒，为长按。
+ 274   1          {
+ 275   2              shortOrLang = 2;
+ 276   2              checkCount = 0;
+ 277   2              buttonDown = 0;
+ 278   2          }
+ 279   1          else // 如果按下时间小于一秒，则判断是否松开，若松开，则为短按，否则继续计数。
+ 280   1          {
+ 281   2              if ((button == 0 && P3_2 == 1) || (button == 1 && P3_3 == 1))
+ 282   2              {
+ 283   3                  shortOrLang = 1;
+ 284   3                  checkCount = 0;
+ 285   3                  buttonDown = 0;
+ 286   3              }
+ 287   2          }
+ 288   1      }
+ 289          
+ 290          // 按键短按处理程序
+ 291          void ShortPress()
+ 292          {
+ 293   1          if (button == 0) // 如果按的是键A
+ 294   1          {
+ 295   2              switch (mode)
+ 296   2              {
+ 297   3              case SHOW:
+ 298   3                  ChangeMode(STOPWATCH);
+ 299   3                  break;
+ 300   3              case STOPWATCH:
+ 301   3                  mode = ALARMCLOCK;
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 6   
 
- 302   3              case ALARMCLOCK_HOUR:
- 303   3                  mode = ALARMCLOCK_MINUTE;
- 304   3                  break;
- 305   3              case ALARMCLOCK_MINUTE:
- 306   3                  mode = ALARMCLOCK_SUNDAY;
- 307   3                  break;
- 308   3              case ALARMCLOCK_SUNDAY:
- 309   3                  mode = ALARMCLOCK_MONDAY;
- 310   3                  break;
- 311   3              case ALARMCLOCK_MONDAY:
- 312   3                  mode = ALARMCLOCK_TUESDAY;
- 313   3                  break;
- 314   3              case ALARMCLOCK_TUESDAY:
- 315   3                  mode = ALARMCLOCK_WEDNESDAY;
- 316   3                  break;
- 317   3              case ALARMCLOCK_WEDNESDAY:
- 318   3                  mode = ALARMCLOCK_THURSDAY;
- 319   3                  break;
- 320   3              case ALARMCLOCK_THURSDAY:
- 321   3                  mode = ALARMCLOCK_FRIDAY;
- 322   3                  break;
- 323   3              case ALARMCLOCK_FRIDAY:
- 324   3                  mode = ALARMCLOCK_SATURDAY;
- 325   3                  break;
- 326   3              case ALARMCLOCK_SATURDAY:
- 327   3                  mode = ALARMCLOCK_HOUR;
- 328   3                  break;
- 329   3              default:
- 330   3                  break;
- 331   3              }
- 332   2          }
- 333   1          else
- 334   1          {
- 335   2              unsigned char setHour;
- 336   2              unsigned char setMinute;
- 337   2              unsigned char setSecond;
- 338   2              switch (mode)
- 339   2              {
- 340   3              case SET_YEAR:
- 341   3                  year++;
- 342   3                  year %= 10000;
- 343   3      
- 344   3                  UpdateWeekday();
- 345   3                  break;
- 346   3              case SET_MONTH:
- 347   3                  month = (month % 12) + 1;
- 348   3      
- 349   3                  UpdateWeekday();
+ 302   3                  break;
+ 303   3              case ALARMCLOCK:
+ 304   3                  ChangeMode(SHOW);
+ 305   3                  break;
+ 306   3              case SET_HOUR:
+ 307   3                  mode = SET_MINUTE;
+ 308   3                  break;
+ 309   3              case SET_MINUTE:
+ 310   3                  mode = SET_SECOND;
+ 311   3                  break;
+ 312   3              case SET_SECOND:
+ 313   3                  mode = SET_HOUR;
+ 314   3                  break;
+ 315   3              case SET_YEAR:
+ 316   3                  mode = SET_MONTH;
+ 317   3                  break;
+ 318   3              case SET_MONTH:
+ 319   3                  mode = SET_DAY;
+ 320   3                  break;
+ 321   3              case SET_DAY:
+ 322   3                  mode = SET_YEAR;
+ 323   3                  break;
+ 324   3              case ALARMCLOCK_HOUR:
+ 325   3                  mode = ALARMCLOCK_MINUTE;
+ 326   3                  break;
+ 327   3              case ALARMCLOCK_MINUTE:
+ 328   3                  mode = ALARMCLOCK_SUNDAY;
+ 329   3                  break;
+ 330   3              case ALARMCLOCK_SUNDAY:
+ 331   3                  mode = ALARMCLOCK_MONDAY;
+ 332   3                  break;
+ 333   3              case ALARMCLOCK_MONDAY:
+ 334   3                  mode = ALARMCLOCK_TUESDAY;
+ 335   3                  break;
+ 336   3              case ALARMCLOCK_TUESDAY:
+ 337   3                  mode = ALARMCLOCK_WEDNESDAY;
+ 338   3                  break;
+ 339   3              case ALARMCLOCK_WEDNESDAY:
+ 340   3                  mode = ALARMCLOCK_THURSDAY;
+ 341   3                  break;
+ 342   3              case ALARMCLOCK_THURSDAY:
+ 343   3                  mode = ALARMCLOCK_FRIDAY;
+ 344   3                  break;
+ 345   3              case ALARMCLOCK_FRIDAY:
+ 346   3                  mode = ALARMCLOCK_SATURDAY;
+ 347   3                  break;
+ 348   3              case ALARMCLOCK_SATURDAY:
+ 349   3                  mode = ALARMCLOCK_HOUR;
  350   3                  break;
- 351   3              case SET_DAY:
- 352   3                  if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2) // 闰年2月
- 353   3                      day = (day % 29) + 1;
- 354   3                  else
- 355   3                      day = (day % Seg_Date[month - 1]) + 1;
- 356   3      
- 357   3                  UpdateWeekday();
- 358   3                  break;
- 359   3              case SET_HOUR:
- 360   3                  setHour++;
- 361   3                  setHour %= 24;
- 362   3      
- 363   3                  break;
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 7   
+ 351   3              default:
+ 352   3                  break;
+ 353   3              }
+ 354   2          }
+ 355   1          else
+ 356   1          {
+ 357   2              unsigned char setHour;
+ 358   2              unsigned char setMinute;
+ 359   2              unsigned char setSecond;
+ 360   2              switch (mode)
+ 361   2              {
+ 362   3              case SET_YEAR:
+ 363   3                  year++;
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 7   
 
- 364   3              case SET_MINUTE:
- 365   3                  setMinute++;
- 366   3                  setMinute %= 60;
- 367   3      
- 368   3                  break;
- 369   3              case SET_SECOND:
- 370   3                  setSecond++;
- 371   3                  setSecond %= 60;
- 372   3      
- 373   3                  break;
- 374   3              case STOPWATCH:
- 375   3                  mode = STOPWATCH_START;
- 376   3                  break;
- 377   3              case STOPWATCH_START:
- 378   3                  mode = STOPWATCH_PAUSE;
- 379   3                  break;
- 380   3              case STOPWATCH_PAUSE:
- 381   3                  mode = STOPWATCH_START;
- 382   3                  break;
- 383   3              case ALARMCLOCK:
- 384   3                  alarm = !alarm;
+ 364   3                  year %= 10000;
+ 365   3      
+ 366   3                  UpdateWeekday();
+ 367   3                  break;
+ 368   3              case SET_MONTH:
+ 369   3                  month = (month % 12) + 1;
+ 370   3      
+ 371   3                  UpdateWeekday();
+ 372   3                  break;
+ 373   3              case SET_DAY:
+ 374   3                  if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2) // 闰年2月
+ 375   3                      day = (day % 29) + 1;
+ 376   3                  else
+ 377   3                      day = (day % Seg_Date[month - 1]) + 1;
+ 378   3      
+ 379   3                  UpdateWeekday();
+ 380   3                  break;
+ 381   3              case SET_HOUR:
+ 382   3                  setHour++;
+ 383   3                  setHour %= 24;
+ 384   3      
  385   3                  break;
- 386   3              case ALARMCLOCK_HOUR:
- 387   3                  setAlarmHour++;
- 388   3                  setAlarmHour %= 24;
+ 386   3              case SET_MINUTE:
+ 387   3                  setMinute++;
+ 388   3                  setMinute %= 60;
  389   3      
  390   3                  break;
- 391   3              case ALARMCLOCK_MINUTE:
- 392   3                  setAlarmMinute++;
- 393   3                  setAlarmMinute %= 60;
+ 391   3              case SET_SECOND:
+ 392   3                  setSecond++;
+ 393   3                  setSecond %= 60;
  394   3      
  395   3                  break;
- 396   3              case ALARMCLOCK_SUNDAY:
- 397   3      
- 398   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 0); // 低0位取反
- 399   3      
- 400   3                  break;
- 401   3              case ALARMCLOCK_MONDAY:
- 402   3      
- 403   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 1); // 低1位取反
- 404   3      
- 405   3                  break;
- 406   3              case ALARMCLOCK_TUESDAY:
- 407   3      
- 408   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 2); // 低2位取反
- 409   3      
- 410   3                  break;
- 411   3              case ALARMCLOCK_WEDNESDAY:;
- 412   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 3); // 低3位取反
- 413   3      
- 414   3                  break;
- 415   3              case ALARMCLOCK_THURSDAY:
+ 396   3              case STOPWATCH:
+ 397   3                  mode = STOPWATCH_START;
+ 398   3                  break;
+ 399   3              case STOPWATCH_START:
+ 400   3                  mode = STOPWATCH_PAUSE;
+ 401   3                  break;
+ 402   3              case STOPWATCH_PAUSE:
+ 403   3                  mode = STOPWATCH_START;
+ 404   3                  break;
+ 405   3              case ALARMCLOCK:
+ 406   3                  alarm = !alarm;
+ 407   3                  break;
+ 408   3              case ALARMCLOCK_HOUR:
+ 409   3                  setAlarmHour++;
+ 410   3                  setAlarmHour %= 24;
+ 411   3      
+ 412   3                  break;
+ 413   3              case ALARMCLOCK_MINUTE:
+ 414   3                  setAlarmMinute++;
+ 415   3                  setAlarmMinute %= 60;
  416   3      
- 417   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 4); // 低4位取反
- 418   3      
- 419   3                  break;
- 420   3              case ALARMCLOCK_FRIDAY:
+ 417   3                  break;
+ 418   3              case ALARMCLOCK_SUNDAY:
+ 419   3      
+ 420   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 0); // 低0位取反
  421   3      
- 422   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 5); // 低5位取反
- 423   3      
- 424   3                  break;
- 425   3              case ALARMCLOCK_SATURDAY:
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 8   
+ 422   3                  break;
+ 423   3              case ALARMCLOCK_MONDAY:
+ 424   3      
+ 425   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 1); // 低1位取反
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 8   
 
  426   3      
- 427   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 6); // 低6位取反
- 428   3      
- 429   3                  break;
- 430   3              default:
- 431   3                  break;
- 432   3              }
- 433   2          }
- 434   1      
- 435   1          shortOrLang = 0; // 重置按键标志
- 436   1      }
- 437          
- 438          // 按键长按处理程序
- 439          void LongPress()
- 440          {
- 441   1          if (button == 0) // 如果按的是键A
- 442   1          {
- 443   2              switch (mode)
- 444   2              {
- 445   3              case SHOW:
- 446   3                  mode = SET_HOUR;
- 447   3                  break;
- 448   3              case SET_YEAR:
- 449   3              case SET_MONTH:
- 450   3              case SET_DAY:
- 451   3                  if (!CheckDate(year, month, day)) // 如果日期无误才能确定
- 452   3                  {
- 453   4                      ChangeMode(SHOW);
- 454   4                  }
- 455   3                  break;
- 456   3              case SET_HOUR:
- 457   3              case SET_MINUTE:
- 458   3              case SET_SECOND:
- 459   3      
- 460   3                  ChangeMode(SHOW);
- 461   3                  break;
- 462   3              case ALARMCLOCK:
- 463   3                  mode = ALARMCLOCK_HOUR;
- 464   3                  break;
- 465   3              case ALARMCLOCK_HOUR:
- 466   3              case ALARMCLOCK_MINUTE:
- 467   3              case ALARMCLOCK_SUNDAY:
- 468   3              case ALARMCLOCK_MONDAY:
- 469   3              case ALARMCLOCK_TUESDAY:
- 470   3              case ALARMCLOCK_WEDNESDAY:
- 471   3              case ALARMCLOCK_THURSDAY:
- 472   3              case ALARMCLOCK_FRIDAY:
- 473   3              case ALARMCLOCK_SATURDAY:
- 474   3                  alarmHour = setAlarmHour;
- 475   3                  alarmMinute = setAlarmMinute;
- 476   3                  alarmWeekday = setAlarmWeekday;
- 477   3                  mode = ALARMCLOCK;
- 478   3                  break;
- 479   3              default:
- 480   3                  break;
- 481   3              }
- 482   2          }
- 483   1          else
- 484   1          {
- 485   2              switch (mode)
- 486   2              {
- 487   3              case SHOW:
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 9   
+ 427   3                  break;
+ 428   3              case ALARMCLOCK_TUESDAY:
+ 429   3      
+ 430   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 2); // 低2位取反
+ 431   3      
+ 432   3                  break;
+ 433   3              case ALARMCLOCK_WEDNESDAY:;
+ 434   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 3); // 低3位取反
+ 435   3      
+ 436   3                  break;
+ 437   3              case ALARMCLOCK_THURSDAY:
+ 438   3      
+ 439   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 4); // 低4位取反
+ 440   3      
+ 441   3                  break;
+ 442   3              case ALARMCLOCK_FRIDAY:
+ 443   3      
+ 444   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 5); // 低5位取反
+ 445   3      
+ 446   3                  break;
+ 447   3              case ALARMCLOCK_SATURDAY:
+ 448   3      
+ 449   3                  setAlarmWeekday = setAlarmWeekday ^ (1 << 6); // 低6位取反
+ 450   3      
+ 451   3                  break;
+ 452   3              default:
+ 453   3                  break;
+ 454   3              }
+ 455   2          }
+ 456   1      
+ 457   1          shortOrLang = 0; // 重置按键标志
+ 458   1      }
+ 459          
+ 460          // 按键长按处理程序
+ 461          void LongPress()
+ 462          {
+ 463   1          if (button == 0) // 如果按的是键A
+ 464   1          {
+ 465   2              switch (mode)
+ 466   2              {
+ 467   3              case SHOW:
+ 468   3                  mode = SET_HOUR;
+ 469   3                  break;
+ 470   3              case SET_YEAR:
+ 471   3              case SET_MONTH:
+ 472   3              case SET_DAY:
+ 473   3                  if (!CheckDate(year, month, day)) // 如果日期无误才能确定
+ 474   3                  {
+ 475   4                      ChangeMode(SHOW);
+ 476   4                  }
+ 477   3                  break;
+ 478   3              case SET_HOUR:
+ 479   3              case SET_MINUTE:
+ 480   3              case SET_SECOND:
+ 481   3      
+ 482   3                  ChangeMode(SHOW);
+ 483   3                  break;
+ 484   3              case ALARMCLOCK:
+ 485   3                  mode = ALARMCLOCK_HOUR;
+ 486   3                  break;
+ 487   3              case ALARMCLOCK_HOUR:
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 9   
 
- 488   3                  hourlyChime = !hourlyChime;
- 489   3                  strncpy(line4 + 2, "整点报时  ", 10);
- 490   3                  if (hourlyChime)
- 491   3                      strncpy(line4 + 12, "开", 2);
- 492   3                  else
- 493   3                      strncpy(line4 + 12, "关", 2);
- 494   3                  LCD12864_DisplayOneLine(LINE4, line4, 16);
- 495   3                  break;
- 496   3              case SET_HOUR:
- 497   3              case SET_MINUTE:
- 498   3              case SET_SECOND:
- 499   3                  ChangeMode(SHOW);
+ 488   3              case ALARMCLOCK_MINUTE:
+ 489   3              case ALARMCLOCK_SUNDAY:
+ 490   3              case ALARMCLOCK_MONDAY:
+ 491   3              case ALARMCLOCK_TUESDAY:
+ 492   3              case ALARMCLOCK_WEDNESDAY:
+ 493   3              case ALARMCLOCK_THURSDAY:
+ 494   3              case ALARMCLOCK_FRIDAY:
+ 495   3              case ALARMCLOCK_SATURDAY:
+ 496   3                  alarmHour = setAlarmHour;
+ 497   3                  alarmMinute = setAlarmMinute;
+ 498   3                  alarmWeekday = setAlarmWeekday;
+ 499   3                  mode = ALARMCLOCK;
  500   3                  break;
- 501   3              case SET_YEAR:
- 502   3                  year--;
- 503   3                  year %= 10000;
- 504   3      
- 505   3                  UpdateWeekday();
- 506   3                  break;
- 507   3              case SET_MONTH:
- 508   3                  month += 10;
- 509   3                  month = (month % 12) + 1;
- 510   3      
- 511   3                  UpdateWeekday();
- 512   3                  break;
- 513   3              case SET_DAY:
- 514   3                  if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2)
- 515   3                  {
- 516   4                      day += 29 - 2;
- 517   4                      day = (day % 29) + 1;
- 518   4                  }
- 519   3                  else
- 520   3                  {
- 521   4                      day += Seg_Date[month - 1] - 2;
- 522   4                      day = (day % Seg_Date[month - 1]) + 1;
- 523   4                  }
- 524   3      
- 525   3                  UpdateWeekday();
- 526   3                  break;
- 527   3              case STOPWATCH_PAUSE:
- 528   3                  mode = STOPWATCH;
- 529   3                  break;
- 530   3              case ALARMCLOCK_HOUR:
- 531   3              case ALARMCLOCK_MINUTE:
- 532   3              case ALARMCLOCK_SUNDAY:
- 533   3              case ALARMCLOCK_MONDAY:
- 534   3              case ALARMCLOCK_TUESDAY:
- 535   3              case ALARMCLOCK_WEDNESDAY:
- 536   3              case ALARMCLOCK_THURSDAY:
- 537   3              case ALARMCLOCK_FRIDAY:
- 538   3              case ALARMCLOCK_SATURDAY:
- 539   3                  setAlarmHour = alarmHour;
- 540   3                  setAlarmMinute = alarmMinute;
- 541   3                  setAlarmWeekday = alarmWeekday;
- 542   3                  mode = ALARMCLOCK;
- 543   3                  break;
- 544   3              default:
- 545   3                  break;
- 546   3              }
- 547   2          }
- 548   1      
- 549   1          shortOrLang = 0; // 重置按键标志
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 10  
+ 501   3              default:
+ 502   3                  break;
+ 503   3              }
+ 504   2          }
+ 505   1          else
+ 506   1          {
+ 507   2              switch (mode)
+ 508   2              {
+ 509   3              case SHOW:
+ 510   3                  hourlyChime = !hourlyChime;
+ 511   3                  strncpy(line4 + 2, "整点报时  ", 10);
+ 512   3                  if (hourlyChime)
+ 513   3                      strncpy(line4 + 12, "开", 2);
+ 514   3                  else
+ 515   3                      strncpy(line4 + 12, "关", 2);
+ 516   3                  LCD12864_DisplayOneLine(LINE4, line4, 16);
+ 517   3                  break;
+ 518   3              case SET_HOUR:
+ 519   3              case SET_MINUTE:
+ 520   3              case SET_SECOND:
+ 521   3                  ChangeMode(SHOW);
+ 522   3                  break;
+ 523   3              case SET_YEAR:
+ 524   3                  year--;
+ 525   3                  year %= 10000;
+ 526   3      
+ 527   3                  UpdateWeekday();
+ 528   3                  break;
+ 529   3              case SET_MONTH:
+ 530   3                  month += 10;
+ 531   3                  month = (month % 12) + 1;
+ 532   3      
+ 533   3                  UpdateWeekday();
+ 534   3                  break;
+ 535   3              case SET_DAY:
+ 536   3                  if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2)
+ 537   3                  {
+ 538   4                      day += 29 - 2;
+ 539   4                      day = (day % 29) + 1;
+ 540   4                  }
+ 541   3                  else
+ 542   3                  {
+ 543   4                      day += Seg_Date[month - 1] - 2;
+ 544   4                      day = (day % Seg_Date[month - 1]) + 1;
+ 545   4                  }
+ 546   3      
+ 547   3                  UpdateWeekday();
+ 548   3                  break;
+ 549   3              case STOPWATCH_PAUSE:
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 10  
 
- 550   1      }
- 551          
- 552          // 秒数增加处理程序
- 553          void SecondIncrease()
- 554          {
- 555   1          second++;
- 556   1          if (second > 59)
- 557   1          {
- 558   2              second = 0;
- 559   2              minute++;
- 560   2          }
- 561   1      
- 562   1          if (minute > 59)
- 563   1          {
- 564   2              minute = 0;
- 565   2              hour++;
- 566   2          }
- 567   1      
- 568   1          if (hour > 23)
- 569   1          {
- 570   2              hour = 0;
- 571   2          }
+ 550   3                  ChangeMode(STOPWATCH);
+ 551   3                  break;
+ 552   3              case ALARMCLOCK_HOUR:
+ 553   3              case ALARMCLOCK_MINUTE:
+ 554   3              case ALARMCLOCK_SUNDAY:
+ 555   3              case ALARMCLOCK_MONDAY:
+ 556   3              case ALARMCLOCK_TUESDAY:
+ 557   3              case ALARMCLOCK_WEDNESDAY:
+ 558   3              case ALARMCLOCK_THURSDAY:
+ 559   3              case ALARMCLOCK_FRIDAY:
+ 560   3              case ALARMCLOCK_SATURDAY:
+ 561   3                  setAlarmHour = alarmHour;
+ 562   3                  setAlarmMinute = alarmMinute;
+ 563   3                  setAlarmWeekday = alarmWeekday;
+ 564   3                  mode = ALARMCLOCK;
+ 565   3                  break;
+ 566   3              default:
+ 567   3                  break;
+ 568   3              }
+ 569   2          }
+ 570   1      
+ 571   1          shortOrLang = 0; // 重置按键标志
  572   1      }
  573          
- 574          // 日期增加处理程序
- 575          void DateIncrease()
+ 574          // 秒数增加处理程序
+ 575          void SecondIncrease()
  576          {
- 577   1          day++;
- 578   1          if (CheckDate(year, month, day))
+ 577   1          second++;
+ 578   1          if (second > 59)
  579   1          {
- 580   2              day = 1;
- 581   2              month++;
- 582   2              if (month > 12)
- 583   2              {
- 584   3                  month = 1;
- 585   3                  year++;
- 586   3              }
- 587   2          }
- 588   1      }
- 589          
- 590          // 更新日期
- 591          void UpdateWeekday()
- 592          {
- 593   1          weekday = ((month > 2 ? (year % 100) : (year % 100) - 1) + ((month > 2 ? (year % 100) : (year % 100) -
-             - 1) / 4) + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
+ 580   2              second = 0;
+ 581   2              minute++;
+ 582   2          }
+ 583   1      
+ 584   1          if (minute > 59)
+ 585   1          {
+ 586   2              minute = 0;
+ 587   2              hour++;
+ 588   2          }
+ 589   1      
+ 590   1          if (hour > 23)
+ 591   1          {
+ 592   2              hour = 0;
+ 593   2          }
  594   1      }
  595          
- 596          // 检查日期程序，返回0表示日期无误，返回1表示日期有误
- 597          bit CheckDate(unsigned int year, unsigned char month, unsigned char day)
+ 596          // 日期增加处理程序
+ 597          void DateIncrease()
  598          {
- 599   1          if (month > 12 || month < 1)
- 600   1              return 1; // 月份有误
- 601   1      
- 602   1          if (day < 1)
- 603   1              return 1; // 日期有误
- 604   1      
- 605   1          if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2)
- 606   1          {
- 607   2              if (day > 29)
- 608   2                  return 1; // 闰年2月29日有误
+ 599   1          day++;
+ 600   1          if (CheckDate(year, month, day))
+ 601   1          {
+ 602   2              day = 1;
+ 603   2              month++;
+ 604   2              if (month > 12)
+ 605   2              {
+ 606   3                  month = 1;
+ 607   3                  year++;
+ 608   3              }
  609   2          }
- 610   1          else
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 11  
+ 610   1      }
+ 611          
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 11  
 
- 611   1          {
- 612   2              if (day > Seg_Date[month - 1])
- 613   2                  return 1;
- 614   2          }
- 615   1      
- 616   1          return 0;
- 617   1      }
- 618          
- 619          void ClearChar(unsigned char *str)
+ 612          // 更新日期
+ 613          void UpdateWeekday()
+ 614          {
+ 615   1          weekday = ((month > 2 ? (year % 100) : (year % 100) - 1) + ((month > 2 ? (year % 100) : (year % 100) -
+             - 1) / 4) + (year / 100) / 4 - 2 * (year / 100) + (26 * ((month > 2 ? month : month + 12) + 1) / 10) + day - 1) % 7;
+ 616   1      }
+ 617          
+ 618          // 检查日期程序，返回0表示日期无误，返回1表示日期有误
+ 619          bit CheckDate(unsigned int year, unsigned char month, unsigned char day)
  620          {
- 621   1          unsigned char len = strlen(str);
- 622   1          unsigned char i = 0;
- 623   1          for (i = 0; i < len; i++)
- 624   1          {
- 625   2              str[i] = ' ';
- 626   2          }
- 627   1      }
- 628          
- 629          void Int0() interrupt 0
- 630          {
- 631   1          if (buttonDown == 0)
- 632   1          {
- 633   2              buttonDown = 1;
- 634   2              button = 0;
- 635   2          }
- 636   1      }
- 637          
- 638          void Int1() interrupt 2
- 639          {
- 640   1          if (buttonDown == 0)
- 641   1          {
- 642   2              buttonDown = 1;
- 643   2              button = 1;
- 644   2          }
- 645   1      }
- 646          
- 647          // 定时器0中断服务函数
- 648          void Timer0() interrupt 1
- 649          {
- 650   1          interruptCount++;
- 651   1      
- 652   1          TH0 = (65536 - INTERVAL * 1000) / 256;
- 653   1          TL0 = (65536 - INTERVAL * 1000) % 256;
- 654   1      
- 655   1          if (interruptCount == (1000 / INTERVAL))
- 656   1          { // 1秒
- 657   2              interruptCount = 0;
- 658   2              SecondIncrease();
- 659   2              if (mode == SHOW)
- 660   2              {
- 661   3                  ClearChar(line1);
- 662   3      
- 663   3                  line1[4] = hour / 10 + '0'; // 小时十位
- 664   3                  line1[5] = hour % 10 + '0'; // 小时个位
- 665   3                  line1[6] = ':';
- 666   3                  line1[7] = minute / 10 + '0'; // 分钟十位
- 667   3                  line1[8] = minute % 10 + '0'; // 分钟个位
- 668   3                  line1[9] = ':';
- 669   3                  line1[10] = second / 10 + '0'; // 秒钟十位
- 670   3                  line1[11] = second % 10 + '0'; // 秒钟个位
- 671   3      
- 672   3                  LCD12864_DisplayOneLine(LINE1, line1, 16);
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 12  
+ 621   1          if (month > 12 || month < 1)
+ 622   1              return 1; // 月份有误
+ 623   1      
+ 624   1          if (day < 1)
+ 625   1              return 1; // 日期有误
+ 626   1      
+ 627   1          if (((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0)) && month == 2)
+ 628   1          {
+ 629   2              if (day > 29)
+ 630   2                  return 1; // 闰年2月29日有误
+ 631   2          }
+ 632   1          else
+ 633   1          {
+ 634   2              if (day > Seg_Date[month - 1])
+ 635   2                  return 1;
+ 636   2          }
+ 637   1      
+ 638   1          return 0;
+ 639   1      }
+ 640          
+ 641          void ClearChar(unsigned char *str)
+ 642          {
+ 643   1          unsigned char len = strlen(str);
+ 644   1          unsigned char i = 0;
+ 645   1          for (i = 0; i < len; i++)
+ 646   1          {
+ 647   2              str[i] = ' ';
+ 648   2          }
+ 649   1      }
+ 650          
+ 651          void Int0() interrupt 0
+ 652          {
+ 653   1          if (buttonDown == 0)
+ 654   1          {
+ 655   2              buttonDown = 1;
+ 656   2              button = 0;
+ 657   2          }
+ 658   1      }
+ 659          
+ 660          void Int1() interrupt 2
+ 661          {
+ 662   1          if (buttonDown == 0)
+ 663   1          {
+ 664   2              buttonDown = 1;
+ 665   2              button = 1;
+ 666   2          }
+ 667   1      }
+ 668          
+ 669          // 定时器0中断服务函数
+ 670          void Timer0() interrupt 1
+ 671          {
+ 672   1          interruptCount++;
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 12  
 
- 673   3              }
- 674   2              if (hour == 0 && minute == 0 && second == 0)
- 675   2              {
- 676   3                  DateIncrease();
- 677   3                  UpdateWeekday();
- 678   3                  if (mode == SHOW)
- 679   3                  {
- 680   4                      ClearChar(line2);
- 681   4                      ClearChar(line3);
- 682   4      
- 683   4                      line2[3] = year / 1000 + '0';     // 年份千位
- 684   4                      line2[4] = year / 100 % 10 + '0'; // 年份百位
- 685   4                      line2[5] = year / 10 % 10 + '0';  // 年份十位
- 686   4                      line2[6] = year % 10 + '0';       // 年份个位
- 687   4                      line2[7] = '-';
- 688   4                      line2[8] = month / 10 + '0'; // 月份十位
- 689   4                      line2[9] = month % 10 + '0'; // 月份个位
- 690   4                      line2[10] = '-';
- 691   4                      line2[11] = day / 10 + '0'; // 日期十位
- 692   4                      line2[12] = day % 10 + '0'; // 日期个位
- 693   4      
- 694   4                      switch (weekday)
- 695   4                      {
- 696   5                      case 0:
- 697   5                          strncpy(line3 + 6, "周日", 4);
- 698   5                          break;
- 699   5                      case 1:
- 700   5                          strncpy(line3 + 6, "周一", 4);
- 701   5                          break;
- 702   5                      case 2:
- 703   5                          strncpy(line3 + 6, "周二", 4);
- 704   5                          break;
- 705   5                      case 3:
- 706   5                          strncpy(line3 + 6, "周三", 4);
- 707   5                          break;
- 708   5                      case 4:
- 709   5                          strncpy(line3 + 6, "周四", 4);
- 710   5                          break;
- 711   5                      case 5:
- 712   5                          strncpy(line3 + 6, "周五", 4);
- 713   5                          break;
- 714   5                      case 6:
- 715   5                          strncpy(line3 + 6, "周六", 4);
- 716   5                          break;
- 717   5                      default:
- 718   5                          break;
- 719   5                      }
- 720   4      
- 721   4                      LCD12864_DisplayOneLine(LINE2, line2, 16);
- 722   4                      LCD12864_DisplayOneLine(LINE3, line3, 16);
- 723   4                  }
- 724   3              }
- 725   2          }
- 726   1      
- 727   1          if (buttonDown == 1)
- 728   1          {
- 729   2              Check();
- 730   2          }
- 731   1      
- 732   1          if (shortOrLang == 1)
- 733   1          {
- 734   2              ShortPress();
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 13  
+ 673   1      
+ 674   1          TH0 = (65536 - INTERVAL * 1000) / 256;
+ 675   1          TL0 = (65536 - INTERVAL * 1000) % 256;
+ 676   1      
+ 677   1          if (interruptCount == (1000 / INTERVAL))
+ 678   1          { // 1秒
+ 679   2              interruptCount = 0;
+ 680   2              SecondIncrease();
+ 681   2              if (mode == SHOW)
+ 682   2              {
+ 683   3                  ClearChar(line1);
+ 684   3      
+ 685   3                  line1[4] = hour / 10 + '0'; // 小时十位
+ 686   3                  line1[5] = hour % 10 + '0'; // 小时个位
+ 687   3                  line1[6] = ':';
+ 688   3                  line1[7] = minute / 10 + '0'; // 分钟十位
+ 689   3                  line1[8] = minute % 10 + '0'; // 分钟个位
+ 690   3                  line1[9] = ':';
+ 691   3                  line1[10] = second / 10 + '0'; // 秒钟十位
+ 692   3                  line1[11] = second % 10 + '0'; // 秒钟个位
+ 693   3      
+ 694   3                  LCD12864_DisplayOneLine(LINE1, line1, 16);
+ 695   3              }
+ 696   2              if (hour == 0 && minute == 0 && second == 0)
+ 697   2              {
+ 698   3                  DateIncrease();
+ 699   3                  UpdateWeekday();
+ 700   3                  if (mode == SHOW)
+ 701   3                  {
+ 702   4                      ClearChar(line2);
+ 703   4                      ClearChar(line3);
+ 704   4      
+ 705   4                      line2[3] = year / 1000 + '0';     // 年份千位
+ 706   4                      line2[4] = year / 100 % 10 + '0'; // 年份百位
+ 707   4                      line2[5] = year / 10 % 10 + '0';  // 年份十位
+ 708   4                      line2[6] = year % 10 + '0';       // 年份个位
+ 709   4                      line2[7] = '-';
+ 710   4                      line2[8] = month / 10 + '0'; // 月份十位
+ 711   4                      line2[9] = month % 10 + '0'; // 月份个位
+ 712   4                      line2[10] = '-';
+ 713   4                      line2[11] = day / 10 + '0'; // 日期十位
+ 714   4                      line2[12] = day % 10 + '0'; // 日期个位
+ 715   4      
+ 716   4                      switch (weekday)
+ 717   4                      {
+ 718   5                      case 0:
+ 719   5                          strncpy(line3 + 6, "周日", 4);
+ 720   5                          break;
+ 721   5                      case 1:
+ 722   5                          strncpy(line3 + 6, "周一", 4);
+ 723   5                          break;
+ 724   5                      case 2:
+ 725   5                          strncpy(line3 + 6, "周二", 4);
+ 726   5                          break;
+ 727   5                      case 3:
+ 728   5                          strncpy(line3 + 6, "周三", 4);
+ 729   5                          break;
+ 730   5                      case 4:
+ 731   5                          strncpy(line3 + 6, "周四", 4);
+ 732   5                          break;
+ 733   5                      case 5:
+ 734   5                          strncpy(line3 + 6, "周五", 4);
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 13  
 
- 735   2          }
- 736   1          else if (shortOrLang == 2)
- 737   1          {
- 738   2              LongPress();
- 739   2          }
- 740   1      
- 741   1          if (mode == SHOW && alarm == 1)
- 742   1          {
- 743   2              if (hour == alarmHour && minute == alarmMinute && second == 00 && (alarmWeekday & (1 << weekday)) 
-             -> 0 && interruptCount == 0)
- 744   2                  alarmClockTimes = 2 * ALARMCLOCKTIMES;
- 745   2              if (alarmClockTimes != 0)
- 746   2              {
- 747   3                  if ((0 < interruptCount && interruptCount < (250 / INTERVAL)) || ((500 / INTERVAL) < interrupt
-             -Count && interruptCount < (750 / INTERVAL)))
- 748   3                      Chime = !Chime;
- 749   3                  else
- 750   3                      Chime = 0;
- 751   3                  if (interruptCount % (250 / INTERVAL) == 0)
- 752   3                  {
- 753   4                      alarmClockTimes--;
- 754   4                      Chime = 0;
- 755   4                  }
- 756   3              }
+ 735   5                          break;
+ 736   5                      case 6:
+ 737   5                          strncpy(line3 + 6, "周六", 4);
+ 738   5                          break;
+ 739   5                      default:
+ 740   5                          break;
+ 741   5                      }
+ 742   4      
+ 743   4                      LCD12864_DisplayOneLine(LINE2, line2, 16);
+ 744   4                      LCD12864_DisplayOneLine(LINE3, line3, 16);
+ 745   4                  }
+ 746   3              }
+ 747   2          }
+ 748   1      
+ 749   1          if (buttonDown == 1)
+ 750   1          {
+ 751   2              Check();
+ 752   2          }
+ 753   1      
+ 754   1          if (shortOrLang == 1)
+ 755   1          {
+ 756   2              ShortPress();
  757   2          }
- 758   1      
- 759   1          if (mode == SHOW && hourlyChime == 1)
- 760   1          {
- 761   2              if (hourlyChimeTimes == 0 && minute == 0 && second == 0 && interruptCount == 0)
- 762   2                  hourlyChimeTimes = 2 * (HOURLYCHIMETIMES + 1); // 我也不知道这里为什么要加一，但事实就是它会响
+ 758   1          else if (shortOrLang == 2)
+ 759   1          {
+ 760   2              LongPress();
+ 761   2          }
+ 762   1      
+ 763   1          if (mode == SHOW && alarm == 1)
+ 764   1          {
+ 765   2              if (hour == alarmHour && minute == alarmMinute && second == 00 && (alarmWeekday & (1 << weekday)) 
+             -> 0 && interruptCount == 0)
+ 766   2                  alarmClockTimes = 2 * ALARMCLOCKTIMES;
+ 767   2              if (alarmClockTimes != 0)
+ 768   2              {
+ 769   3                  if ((0 < interruptCount && interruptCount < (250 / INTERVAL)) || ((500 / INTERVAL) < interrupt
+             -Count && interruptCount < (750 / INTERVAL)))
+ 770   3                      Chime = !Chime;
+ 771   3                  else
+ 772   3                      Chime = 0;
+ 773   3                  if (interruptCount % (250 / INTERVAL) == 0)
+ 774   3                  {
+ 775   4                      alarmClockTimes--;
+ 776   4                      Chime = 0;
+ 777   4                  }
+ 778   3              }
+ 779   2          }
+ 780   1      
+ 781   1          if (mode == SHOW && hourlyChime == 1)
+ 782   1          {
+ 783   2              if (hourlyChimeTimes == 0 && minute == 0 && second == 0 && interruptCount == 0)
+ 784   2                  hourlyChimeTimes = 2 * (HOURLYCHIMETIMES + 1); // 我也不知道这里为什么要加一，但事实就是它会响
              -HOURLYCHIMETIMES-1次，所以要加一补上。
- 763   2              if (hourlyChimeTimes != 0)
- 764   2              {
- 765   3                  if (interruptCount > (500 / INTERVAL))
- 766   3                      Chime = !Chime;
- 767   3                  else
- 768   3                      Chime = 0;
- 769   3                  if (interruptCount % (500 / INTERVAL) == 0)
- 770   3                  {
- 771   4                      hourlyChimeTimes--;
- 772   4                      Chime = 0;
- 773   4                  }
- 774   3              }
- 775   2          }
- 776   1      
- 777   1          switch (mode)
- 778   1          {
- 779   2          case SET_HOUR:
- 780   2      
- 781   2              break;
- 782   2          case SET_MINUTE:
- 783   2      
- 784   2              break;
- 785   2          case SET_SECOND:
- 786   2      
- 787   2              break;
- 788   2          case SET_YEAR:
- 789   2      
- 790   2              break;
- 791   2          case SET_MONTH:
- 792   2      
- 793   2              break;
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 14  
+ 785   2              if (hourlyChimeTimes != 0)
+ 786   2              {
+ 787   3                  if (interruptCount > (500 / INTERVAL))
+ 788   3                      Chime = !Chime;
+ 789   3                  else
+ 790   3                      Chime = 0;
+ 791   3                  if (interruptCount % (500 / INTERVAL) == 0)
+ 792   3                  {
+ 793   4                      hourlyChimeTimes--;
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 14  
 
- 794   2          case SET_DAY:
- 795   2      
- 796   2              break;
- 797   2          case STOPWATCH:
- 798   2              stopwatchMSecond = 0;
- 799   2              stopwatchSecond = 0;
- 800   2              stopwatchMinute = 0;
- 801   2      
- 802   2              break;
- 803   2          case STOPWATCH_START:
- 804   2              stopwatchMSecond += INTERVAL;
- 805   2              if (stopwatchMSecond > 999)
- 806   2              {
- 807   3                  stopwatchMSecond = 0;
- 808   3                  stopwatchSecond++;
- 809   3              }
- 810   2              if (stopwatchSecond > 59)
- 811   2              {
- 812   3                  stopwatchSecond = 0;
- 813   3                  stopwatchMinute++;
- 814   3              }
- 815   2              if (stopwatchMinute > 59)
- 816   2              {
- 817   3                  stopwatchMinute = 0;
- 818   3              }
- 819   2      
- 820   2              break;
- 821   2          case STOPWATCH_PAUSE:
- 822   2      
- 823   2              break;
- 824   2          case ALARMCLOCK:
- 825   2      
- 826   2              break;
- 827   2          case ALARMCLOCK_HOUR:
- 828   2      
- 829   2              break;
- 830   2          case ALARMCLOCK_MINUTE:
- 831   2      
- 832   2              break;
- 833   2          case ALARMCLOCK_SUNDAY:
- 834   2      
- 835   2              break;
- 836   2          case ALARMCLOCK_MONDAY:
- 837   2      
- 838   2              break;
- 839   2          case ALARMCLOCK_TUESDAY:
- 840   2      
- 841   2              break;
- 842   2          case ALARMCLOCK_WEDNESDAY:
+ 794   4                      Chime = 0;
+ 795   4                  }
+ 796   3              }
+ 797   2          }
+ 798   1      
+ 799   1          switch (mode)
+ 800   1          {
+ 801   2          case SET_HOUR:
+ 802   2      
+ 803   2              break;
+ 804   2          case SET_MINUTE:
+ 805   2      
+ 806   2              break;
+ 807   2          case SET_SECOND:
+ 808   2      
+ 809   2              break;
+ 810   2          case SET_YEAR:
+ 811   2      
+ 812   2              break;
+ 813   2          case SET_MONTH:
+ 814   2      
+ 815   2              break;
+ 816   2          case SET_DAY:
+ 817   2      
+ 818   2              break;
+ 819   2          case STOPWATCH_START:
+ 820   2              stopwatchMSecond += INTERVAL;
+ 821   2              if (stopwatchMSecond > 999)
+ 822   2              {
+ 823   3                  stopwatchMSecond = 0;
+ 824   3                  stopwatchSecond++;
+ 825   3              }
+ 826   2              if (stopwatchSecond > 59)
+ 827   2              {
+ 828   3                  stopwatchSecond = 0;
+ 829   3                  stopwatchMinute++;
+ 830   3              }
+ 831   2              if (stopwatchMinute > 59)
+ 832   2              {
+ 833   3                  stopwatchMinute = 0;
+ 834   3              }
+ 835   2              line1[4] = stopwatchMinute / 10 + '0'; // 分钟十位
+ 836   2              line1[5] = stopwatchMinute % 10 + '0'; // 分钟个位
+ 837   2              line1[6] = ':';
+ 838   2              line1[7] = stopwatchSecond / 10 + '0'; // 秒十位
+ 839   2              line1[8] = stopwatchSecond % 10 + '0'; // 秒个位
+ 840   2              line1[9] = ':';
+ 841   2              line1[10] = stopwatchMSecond / 100 + '0';     // 毫秒百位
+ 842   2              line1[11] = stopwatchMSecond / 10 % 10 + '0'; // 毫秒十位
  843   2      
- 844   2              break;
- 845   2          case ALARMCLOCK_THURSDAY:
- 846   2      
- 847   2              break;
- 848   2          case ALARMCLOCK_FRIDAY:
- 849   2      
- 850   2              break;
- 851   2          case ALARMCLOCK_SATURDAY:
- 852   2      
- 853   2              break;
- 854   2          default:
+ 844   2              LCD12864_DisplayOneLine(LINE1, line1, 16);
+ 845   2      
+ 846   2              break;
+ 847   2          case STOPWATCH_PAUSE:
+ 848   2      
+ 849   2              break;
+ 850   2          case ALARMCLOCK:
+ 851   2      
+ 852   2              break;
+ 853   2          case ALARMCLOCK_HOUR:
+ 854   2      
  855   2              break;
-C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 14:51:45 PAGE 15  
+C51 COMPILER V9.01   CLOCK                                                                 09/21/2023 16:39:11 PAGE 15  
 
- 856   2          }
- 857   1      }
+ 856   2          case ALARMCLOCK_MINUTE:
+ 857   2      
+ 858   2              break;
+ 859   2          case ALARMCLOCK_SUNDAY:
+ 860   2      
+ 861   2              break;
+ 862   2          case ALARMCLOCK_MONDAY:
+ 863   2      
+ 864   2              break;
+ 865   2          case ALARMCLOCK_TUESDAY:
+ 866   2      
+ 867   2              break;
+ 868   2          case ALARMCLOCK_WEDNESDAY:
+ 869   2      
+ 870   2              break;
+ 871   2          case ALARMCLOCK_THURSDAY:
+ 872   2      
+ 873   2              break;
+ 874   2          case ALARMCLOCK_FRIDAY:
+ 875   2      
+ 876   2              break;
+ 877   2          case ALARMCLOCK_SATURDAY:
+ 878   2      
+ 879   2              break;
+ 880   2          default:
+ 881   2              break;
+ 882   2          }
+ 883   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   2734    ----
+   CODE SIZE        =   2967    ----
    CONSTANT SIZE    =     63    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
