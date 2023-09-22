@@ -1,0 +1,134 @@
+C51 COMPILER V9.01   AT24C02                                                               09/22/2023 13:08:39 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE AT24C02
+OBJECT MODULE PLACED IN AT24C02.OBJ
+COMPILER INVOKED BY: D:\Software\Keil\C51\BIN\C51.EXE AT24C02.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "AT24C02.h"
+   2          
+   3          void AT24C02_Delay(int x)
+   4          {
+   5   1              x /= 2;
+   6   1              while (x--)
+   7   1                      ;
+   8   1      }
+   9          
+  10          // 起始信号：在I2C_SCL时钟信号在高电平期间I2C_SDA信号产生一个下降沿
+  11          void I2C_Start()
+  12          {
+  13   1              I2C_SDA = 1;
+  14   1              I2C_SCL = 1;
+  15   1              AT24C02_Delay(5); // 建立时间是I2C_SDA保持时间>4.7us
+  16   1              I2C_SDA = 0;
+  17   1              AT24C02_Delay(5); // 保持时间是>4us
+  18   1              I2C_SCL = 0;
+  19   1      }
+  20          
+  21          // 终止信号：在I2C_SCL时钟信号高电平期间I2C_SDA信号产生一个上升沿
+  22          void I2C_Stop()
+  23          {
+  24   1              I2C_SDA = 0;
+  25   1              I2C_SCL = 1;
+  26   1              AT24C02_Delay(5); // 建立时间大于4.7us
+  27   1              I2C_SDA = 1;
+  28   1      }
+  29          
+  30          // 通过I2C发送一个字节。在I2C_SCL时钟信号高电平期间， 保持发送信号I2C_SDA保持稳定
+  31          bit I2C_SendByte(unsigned char dat)
+  32          {
+  33   1              unsigned char i = 0;
+  34   1              unsigned char wait = 255; // 最大255，一个机器周期为1us，最大延时255us。
+  35   1              for (i = 0; i < 8; i++)   // 要发送8位，从最高位开始
+  36   1              {
+  37   2                      if (dat & 0x80)
+  38   2                              I2C_SDA = 1; // 起始信号之后I2C_SCL=0，所以可以直接改变I2C_SDA信号
+  39   2                      else
+  40   2                              I2C_SDA = 0;
+  41   2                      dat <<= 1;
+  42   2                      AT24C02_Delay(5); // 建立时间>4.7us
+  43   2                      I2C_SCL = 1;
+  44   2                      AT24C02_Delay(5); // 建立时间>4.7us
+  45   2                      I2C_SCL = 0;
+  46   2                      AT24C02_Delay(5); // 时间大于4us
+  47   2              }
+  48   1              I2C_SDA = 1;
+  49   1              AT24C02_Delay(5);
+  50   1              I2C_SCL = 1;
+  51   1              AT24C02_Delay(5);
+  52   1              if (I2C_SDA)
+  53   1              {
+  54   2                      I2C_SCL = 0;
+  55   2                      I2C_Stop();
+C51 COMPILER V9.01   AT24C02                                                               09/22/2023 13:08:39 PAGE 2   
+
+  56   2                      return 0;
+  57   2              }
+  58   1              else
+  59   1              {
+  60   2                      I2C_SCL = 0;
+  61   2                      return 1;
+  62   2              }
+  63   1      }
+  64          
+  65          // 使用I2c读取一个字节
+  66          unsigned char I2C_ReadByte()
+  67          {
+  68   1              unsigned char i = 0, dat = 0;
+  69   1              I2C_SDA = 1; // 起始和发送一个字节之后I2C_SCL都是0
+  70   1              AT24C02_Delay(5);
+  71   1              for (i = 0; i < 8; i++) // 接收8个字节
+  72   1              {
+  73   2                      I2C_SCL = 1;
+  74   2                      AT24C02_Delay(5);
+  75   2                      dat <<= 1;
+  76   2                      if (I2C_SDA)
+  77   2                              dat |= 1; // 接收到的数据最高位存放在dat的最低位
+  78   2                      I2C_SCL = 0;
+  79   2                      AT24C02_Delay(5);
+  80   2              }
+  81   1              return dat;
+  82   1      }
+  83          
+  84          void AT24C02_Write(unsigned char addr, unsigned char dat)
+  85          {
+  86   1              I2C_Start();
+  87   1              I2C_SendByte(0xa0); // 发送写器件地址
+  88   1              I2C_SendByte(addr); // 发送要写入内存地址
+  89   1              I2C_SendByte(dat);      // 发送数据
+  90   1              I2C_Stop();
+  91   1              AT24C02_Delay(5000);
+  92   1      }
+  93          
+  94          unsigned char AT24C02_Read(unsigned char addr)
+  95          {
+  96   1              unsigned char num;
+  97   1              I2C_Start();
+  98   1              I2C_SendByte(0xa0); // 发送写器件地址
+  99   1              I2C_SendByte(addr); // 发送要读取的地址
+ 100   1              I2C_Start();
+ 101   1              I2C_SendByte(0xa1);       // 发送读器件地址
+ 102   1              num = I2C_ReadByte(); // 读取数据
+ 103   1              I2C_Stop();
+ 104   1              AT24C02_Delay(5000);
+ 105   1      
+ 106   1              return num;
+ 107   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    213    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+C51 COMPILER V9.01   AT24C02                                                               09/22/2023 13:08:39 PAGE 3   
+
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

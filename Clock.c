@@ -1,5 +1,6 @@
 #include <REG51.H>
 #include "LCD12864.h"
+#include "AT24C02.h"
 
 #include <string.h>
 
@@ -21,6 +22,23 @@
 
 #define INIT_HOURLY_CHIME 0 // 初始化整点报时功能，1表示开，0表示关
 #define HOURLYCHIMETIMES 3  // 整点响铃次数
+
+#define HOUR_ADDR 0x00   // 小时在AT24C02中的存储地址
+#define MINUTE_ADDR 0x01 // 分钟在AT24C02中的存储地址
+#define SECOND_ADDR 0x02 // 秒在AT24C02中的存储地址
+
+#define YEAR_ADDR_H 0x03 // 年的高位在AT24C02中的存储地址
+#define YEAR_ADDR_L 0x04 // 年的低位在AT24C02中的存储地址
+#define MONTH_ADDR 0x05  // 月在AT24C02中的存储地址
+#define DAY_ADDR 0x06    // 日在AT24C02中的存储地址
+
+#define ALARM_HOUR_ADDR 0x07    // 闹钟时在AT24C02中的存储地址
+#define ALARM_MINUTE_ADDR 0x08  // 闹钟分在AT24C02中的存储地址
+#define ALARM_WEEKDAY_ADDR 0x09 // 闹钟星期在AT24C02中的存储地址
+
+#define ALARM_ADDR 0x0A // 闹钟功能在AT24C02中的存储地址
+
+#define HOURLY_CHIME_ADDR 0x0B // 整点报时功能在AT24C02中的存储地址
 
 unsigned char xdata hour = INIT_HOUR;     // 初始化小时
 unsigned char xdata minute = INIT_MINUTE; // 初始化分钟
@@ -68,26 +86,26 @@ unsigned char xdata setSecond = INIT_SECOND; // 设置秒的变量
 
 enum MODE
 {
-    SHOW,                 // 显示模式
-    SET_YEAR,             // 设置年模式
-    SET_MONTH,            // 设置月模式
-    SET_DAY,              // 设置日模式
-    SET_HOUR,             // 设置时模式
-    SET_MINUTE,           // 设置分模式
-    SET_SECOND,           // 设置秒模式
-    STOPWATCH,            // 秒表模式
-    STOPWATCH_START,      // 秒表计时模式
-    STOPWATCH_PAUSE,      // 秒表暂停模式
-    ALARMCLOCK,           // 闹钟模式
-    ALARMCLOCK_HOUR,      // 设置闹钟时模式
-    ALARMCLOCK_MINUTE,    // 设置闹钟分模式
-    ALARMCLOCK_SUNDAY,    // 设置闹钟周日模式
-    ALARMCLOCK_MONDAY,    // 设置闹钟周一模式
-    ALARMCLOCK_TUESDAY,   // 设置闹钟周二模式
-    ALARMCLOCK_WEDNESDAY, // 设置闹钟周三模式
-    ALARMCLOCK_THURSDAY,  // 设置闹钟周四模式
-    ALARMCLOCK_FRIDAY,    // 设置闹钟周五模式
-    ALARMCLOCK_SATURDAY   // 设置闹钟周六模式
+    SHOW,                     // 显示模式
+    SET_YEAR,                 // 设置年模式
+    SET_MONTH,                // 设置月模式
+    SET_DAY,                  // 设置日模式
+    SET_HOUR,                 // 设置时模式
+    SET_MINUTE,               // 设置分模式
+    SET_SECOND,               // 设置秒模式
+    STOPWATCH,                // 秒表模式
+    STOPWATCH_START,          // 秒表计时模式
+    STOPWATCH_PAUSE,          // 秒表暂停模式
+    ALARMCLOCK,               // 闹钟模式
+    SET_ALARMCLOCK_HOUR,      // 设置闹钟时模式
+    SET_ALARMCLOCK_MINUTE,    // 设置闹钟分模式
+    SET_ALARMCLOCK_SUNDAY,    // 设置闹钟周日模式
+    SET_ALARMCLOCK_MONDAY,    // 设置闹钟周一模式
+    SET_ALARMCLOCK_TUESDAY,   // 设置闹钟周二模式
+    SET_ALARMCLOCK_WEDNESDAY, // 设置闹钟周三模式
+    SET_ALARMCLOCK_THURSDAY,  // 设置闹钟周四模式
+    SET_ALARMCLOCK_FRIDAY,    // 设置闹钟周五模式
+    SET_ALARMCLOCK_SATURDAY   // 设置闹钟周六模式
 };
 
 unsigned char mode = SHOW; // 模式
@@ -149,6 +167,23 @@ void Init()
 {
 
     LCD12864_Init(); // 初始化液晶屏
+
+    hour = AT24C02_Read(HOUR_ADDR);
+    minute = AT24C02_Read(MINUTE_ADDR);
+    second = AT24C02_Read(SECOND_ADDR);
+
+    year = 0;
+    year += AT24C02_Read(YEAR_ADDR_L);
+    year += AT24C02_Read(YEAR_ADDR_H) * 256;
+    month = AT24C02_Read(MONTH_ADDR);
+    day = AT24C02_Read(DAY_ADDR);
+
+    alarmHour = AT24C02_Read(ALARM_HOUR_ADDR);
+    alarmMinute = AT24C02_Read(ALARM_MINUTE_ADDR);
+    alarmWeekday = AT24C02_Read(ALARM_WEEKDAY_ADDR);
+
+    alarm = AT24C02_Read(ALARM_ADDR) ? 1 : 0;
+    hourlyChime = AT24C02_Read(HOURLY_CHIME_ADDR) ? 1 : 0;
 
     UpdateWeekday(); // 初始化星期
 
@@ -244,15 +279,17 @@ void ChangeMode(MODE)
         ClearChar(line2);
         ClearChar(line3);
         ClearChar(line4);
-
-        line1[5] = setAlarmHour / 10 + '0';
-        line1[6] = setAlarmHour % 10 + '0';
+        setAlarmHour = alarmHour;
+        setAlarmMinute = alarmMinute;
+        setAlarmWeekday = alarmWeekday;
+        line1[5] = alarmHour / 10 + '0';
+        line1[6] = alarmHour % 10 + '0';
         line1[7] = ':';
-        line1[8] = setAlarmMinute / 10 + '0';
-        line1[9] = setAlarmMinute % 10 + '0';
+        line1[8] = alarmMinute / 10 + '0';
+        line1[9] = alarmMinute % 10 + '0';
         for (i = 0; i < 7; i++)
         {
-            if (setAlarmWeekday & (1 << i))
+            if (alarmWeekday & (1 << i))
                 strncpy(line3 + 2 * i, "开", 2);
             else
                 strncpy(line3 + 2 * i, "关", 2);
@@ -402,64 +439,64 @@ void ShortPress()
             line2[12] = day % 10 + '0'; // 日期个位
             ChangeMode(SET_YEAR);
             break;
-        case ALARMCLOCK_HOUR:
+        case SET_ALARMCLOCK_HOUR:
             line1[5] = setAlarmHour / 10 + '0';
             line1[6] = setAlarmHour % 10 + '0';
-            ChangeMode(ALARMCLOCK_MINUTE);
+            ChangeMode(SET_ALARMCLOCK_MINUTE);
             break;
-        case ALARMCLOCK_MINUTE:
+        case SET_ALARMCLOCK_MINUTE:
             line1[8] = setAlarmMinute / 10 + '0';
             line1[9] = setAlarmMinute % 10 + '0';
-            ChangeMode(ALARMCLOCK_SUNDAY);
+            ChangeMode(SET_ALARMCLOCK_SUNDAY);
             break;
-        case ALARMCLOCK_SUNDAY:
+        case SET_ALARMCLOCK_SUNDAY:
             if (setAlarmWeekday & (1 << 0))
                 strncpy(line3 + 0, "开", 2);
             else
                 strncpy(line3 + 0, "关", 2);
-            ChangeMode(ALARMCLOCK_MONDAY);
+            ChangeMode(SET_ALARMCLOCK_MONDAY);
             break;
-        case ALARMCLOCK_MONDAY:
+        case SET_ALARMCLOCK_MONDAY:
             if (setAlarmWeekday & (1 << 1))
                 strncpy(line3 + 2, "开", 2);
             else
                 strncpy(line3 + 2, "关", 2);
-            ChangeMode(ALARMCLOCK_TUESDAY);
+            ChangeMode(SET_ALARMCLOCK_TUESDAY);
             break;
-        case ALARMCLOCK_TUESDAY:
+        case SET_ALARMCLOCK_TUESDAY:
             if (setAlarmWeekday & (1 << 2))
                 strncpy(line3 + 4, "开", 2);
             else
                 strncpy(line3 + 4, "关", 2);
-            ChangeMode(ALARMCLOCK_WEDNESDAY);
+            ChangeMode(SET_ALARMCLOCK_WEDNESDAY);
             break;
-        case ALARMCLOCK_WEDNESDAY:
+        case SET_ALARMCLOCK_WEDNESDAY:
             if (setAlarmWeekday & (1 << 3))
                 strncpy(line3 + 6, "开", 2);
             else
                 strncpy(line3 + 6, "关", 2);
-            ChangeMode(ALARMCLOCK_THURSDAY);
+            ChangeMode(SET_ALARMCLOCK_THURSDAY);
             break;
-        case ALARMCLOCK_THURSDAY:
+        case SET_ALARMCLOCK_THURSDAY:
             if (setAlarmWeekday & (1 << 4))
                 strncpy(line3 + 8, "开", 2);
             else
                 strncpy(line3 + 8, "关", 2);
-            ChangeMode(ALARMCLOCK_FRIDAY);
+            ChangeMode(SET_ALARMCLOCK_FRIDAY);
             break;
-        case ALARMCLOCK_FRIDAY:
+        case SET_ALARMCLOCK_FRIDAY:
             if (setAlarmWeekday & (1 << 5))
                 strncpy(line3 + 10, "开", 2);
             else
                 strncpy(line3 + 10, "关", 2);
-            ChangeMode(ALARMCLOCK_SATURDAY);
+            ChangeMode(SET_ALARMCLOCK_SATURDAY);
             break;
-        case ALARMCLOCK_SATURDAY:
+        case SET_ALARMCLOCK_SATURDAY:
             if (setAlarmWeekday & (1 << 6))
                 strncpy(line3 + 12, "开", 2);
             else
                 strncpy(line3 + 12, "关", 2);
-            ChangeMode(ALARMCLOCK_HOUR);
+            ChangeMode(SET_ALARMCLOCK_HOUR);
             break;
         default:
             break;
@@ -473,9 +510,16 @@ void ShortPress()
             hourlyChime = !hourlyChime;
             strncpy(line4 + 2, "整点报时  ", 10);
             if (hourlyChime)
+            {
+                AT24C02_Write(HOURLY_CHIME_ADDR, 0x01);
                 strncpy(line4 + 12, "开", 2);
+            }
             else
+            {
+                AT24C02_Write(HOURLY_CHIME_ADDR, 0x00);
                 strncpy(line4 + 12, "关", 2);
+            }
+
             LCD12864_DisplayOneLine(LINE4, line4, 16);
             break;
         case SET_YEAR:
@@ -524,51 +568,59 @@ void ShortPress()
         case ALARMCLOCK:
             alarm = !alarm;
             if (alarm)
+            {
+                AT24C02_Write(ALARM_ADDR, 0x01);
                 strncpy(line3 + 14, "开", 2);
+            }
+
             else
+            {
+                AT24C02_Write(ALARM_ADDR, 0x00);
                 strncpy(line3 + 14, "关", 2);
+            }
+
             LCD12864_DisplayOneLine(LINE3, line3, 16);
             break;
-        case ALARMCLOCK_HOUR:
+        case SET_ALARMCLOCK_HOUR:
             setAlarmHour++;
             setAlarmHour %= 24;
 
             break;
-        case ALARMCLOCK_MINUTE:
+        case SET_ALARMCLOCK_MINUTE:
             setAlarmMinute++;
             setAlarmMinute %= 60;
 
             break;
-        case ALARMCLOCK_SUNDAY:
+        case SET_ALARMCLOCK_SUNDAY:
 
             setAlarmWeekday = setAlarmWeekday ^ (1 << 0); // 低0位取反
 
             break;
-        case ALARMCLOCK_MONDAY:
+        case SET_ALARMCLOCK_MONDAY:
 
             setAlarmWeekday = setAlarmWeekday ^ (1 << 1); // 低1位取反
 
             break;
-        case ALARMCLOCK_TUESDAY:
+        case SET_ALARMCLOCK_TUESDAY:
 
             setAlarmWeekday = setAlarmWeekday ^ (1 << 2); // 低2位取反
 
             break;
-        case ALARMCLOCK_WEDNESDAY:;
+        case SET_ALARMCLOCK_WEDNESDAY:;
             setAlarmWeekday = setAlarmWeekday ^ (1 << 3); // 低3位取反
 
             break;
-        case ALARMCLOCK_THURSDAY:
+        case SET_ALARMCLOCK_THURSDAY:
 
             setAlarmWeekday = setAlarmWeekday ^ (1 << 4); // 低4位取反
 
             break;
-        case ALARMCLOCK_FRIDAY:
+        case SET_ALARMCLOCK_FRIDAY:
 
             setAlarmWeekday = setAlarmWeekday ^ (1 << 5); // 低5位取反
 
             break;
-        case ALARMCLOCK_SATURDAY:
+        case SET_ALARMCLOCK_SATURDAY:
 
             setAlarmWeekday = setAlarmWeekday ^ (1 << 6); // 低6位取反
 
@@ -599,6 +651,10 @@ void LongPress()
         case SET_DAY:
             if (!CheckDate(year, month, day)) // 如果日期无误才能确定
             {
+                AT24C02_Write(YEAR_ADDR_L, year % 256);
+                AT24C02_Write(YEAR_ADDR_H, year / 256);
+                AT24C02_Write(MONTH_ADDR, month);
+                AT24C02_Write(DAY_ADDR, day);
                 ChangeMode(SHOW);
             }
             break;
@@ -608,23 +664,29 @@ void LongPress()
             hour = setHour;
             minute = setMinute;
             second = setSecond;
+            AT24C02_Write(HOUR_ADDR, hour);
+            AT24C02_Write(MINUTE_ADDR, minute);
+            AT24C02_Write(SECOND_ADDR, second);
             ChangeMode(SHOW);
             break;
         case ALARMCLOCK:
-            mode = ALARMCLOCK_HOUR;
+            mode = SET_ALARMCLOCK_HOUR;
             break;
-        case ALARMCLOCK_HOUR:
-        case ALARMCLOCK_MINUTE:
-        case ALARMCLOCK_SUNDAY:
-        case ALARMCLOCK_MONDAY:
-        case ALARMCLOCK_TUESDAY:
-        case ALARMCLOCK_WEDNESDAY:
-        case ALARMCLOCK_THURSDAY:
-        case ALARMCLOCK_FRIDAY:
-        case ALARMCLOCK_SATURDAY:
+        case SET_ALARMCLOCK_HOUR:
+        case SET_ALARMCLOCK_MINUTE:
+        case SET_ALARMCLOCK_SUNDAY:
+        case SET_ALARMCLOCK_MONDAY:
+        case SET_ALARMCLOCK_TUESDAY:
+        case SET_ALARMCLOCK_WEDNESDAY:
+        case SET_ALARMCLOCK_THURSDAY:
+        case SET_ALARMCLOCK_FRIDAY:
+        case SET_ALARMCLOCK_SATURDAY:
             alarmHour = setAlarmHour;
             alarmMinute = setAlarmMinute;
             alarmWeekday = setAlarmWeekday;
+            AT24C02_Write(ALARM_HOUR_ADDR, alarmHour);
+            AT24C02_Write(ALARM_MINUTE_ADDR, alarmMinute);
+            AT24C02_Write(ALARM_WEEKDAY_ADDR, alarmWeekday);
             ChangeMode(ALARMCLOCK);
             break;
         default:
@@ -672,15 +734,15 @@ void LongPress()
         case STOPWATCH_PAUSE:
             ChangeMode(STOPWATCH);
             break;
-        case ALARMCLOCK_HOUR:
-        case ALARMCLOCK_MINUTE:
-        case ALARMCLOCK_SUNDAY:
-        case ALARMCLOCK_MONDAY:
-        case ALARMCLOCK_TUESDAY:
-        case ALARMCLOCK_WEDNESDAY:
-        case ALARMCLOCK_THURSDAY:
-        case ALARMCLOCK_FRIDAY:
-        case ALARMCLOCK_SATURDAY:
+        case SET_ALARMCLOCK_HOUR:
+        case SET_ALARMCLOCK_MINUTE:
+        case SET_ALARMCLOCK_SUNDAY:
+        case SET_ALARMCLOCK_MONDAY:
+        case SET_ALARMCLOCK_TUESDAY:
+        case SET_ALARMCLOCK_WEDNESDAY:
+        case SET_ALARMCLOCK_THURSDAY:
+        case SET_ALARMCLOCK_FRIDAY:
+        case SET_ALARMCLOCK_SATURDAY:
             setAlarmHour = alarmHour;
             setAlarmMinute = alarmMinute;
             setAlarmWeekday = alarmWeekday;
@@ -838,6 +900,9 @@ void Timer0() interrupt 1
     { // 1秒
         interruptCount = 0;
         SecondIncrease();
+        AT24C02_Write(HOUR_ADDR, hour);
+        AT24C02_Write(MINUTE_ADDR, minute);
+        AT24C02_Write(SECOND_ADDR, second);
         if (mode == SHOW)
         {
             ClearChar(line1);
@@ -857,6 +922,10 @@ void Timer0() interrupt 1
         {
             DateIncrease();
             UpdateWeekday();
+            AT24C02_Write(YEAR_ADDR_L, year % 256);
+            AT24C02_Write(YEAR_ADDR_H, year / 256);
+            AT24C02_Write(MONTH_ADDR, month);
+            AT24C02_Write(DAY_ADDR, day);
             if (mode == SHOW)
             {
                 ClearChar(line2);
@@ -1039,7 +1108,7 @@ void Timer0() interrupt 1
         LCD12864_DisplayOneLine(LINE1, line1, 16);
 
         break;
-    case ALARMCLOCK_HOUR:
+    case SET_ALARMCLOCK_HOUR:
         if (interruptCount < (500 / INTERVAL))
         {
             line1[5] = setAlarmHour / 10 + '0';
@@ -1052,7 +1121,7 @@ void Timer0() interrupt 1
         }
         LCD12864_DisplayOneLine(LINE1, line1, 16);
         break;
-    case ALARMCLOCK_MINUTE:
+    case SET_ALARMCLOCK_MINUTE:
         if (interruptCount < (500 / INTERVAL))
         {
             line1[8] = setAlarmMinute / 10 + '0';
@@ -1065,7 +1134,7 @@ void Timer0() interrupt 1
         }
         LCD12864_DisplayOneLine(LINE1, line1, 16);
         break;
-    case ALARMCLOCK_SUNDAY:
+    case SET_ALARMCLOCK_SUNDAY:
         if (interruptCount < (500 / INTERVAL))
         {
             if (setAlarmWeekday & (1 << 0))
@@ -1080,7 +1149,7 @@ void Timer0() interrupt 1
         }
         LCD12864_DisplayOneLine(LINE3, line3, 16);
         break;
-    case ALARMCLOCK_MONDAY:
+    case SET_ALARMCLOCK_MONDAY:
         if (interruptCount < (500 / INTERVAL))
         {
             if (setAlarmWeekday & (1 << 1))
@@ -1095,7 +1164,7 @@ void Timer0() interrupt 1
         }
         LCD12864_DisplayOneLine(LINE3, line3, 16);
         break;
-    case ALARMCLOCK_TUESDAY:
+    case SET_ALARMCLOCK_TUESDAY:
         if (interruptCount < (500 / INTERVAL))
         {
             if (setAlarmWeekday & (1 << 2))
@@ -1110,7 +1179,7 @@ void Timer0() interrupt 1
         }
         LCD12864_DisplayOneLine(LINE3, line3, 16);
         break;
-    case ALARMCLOCK_WEDNESDAY:
+    case SET_ALARMCLOCK_WEDNESDAY:
         if (interruptCount < (500 / INTERVAL))
         {
             if (setAlarmWeekday & (1 << 3))
@@ -1125,7 +1194,7 @@ void Timer0() interrupt 1
         }
         LCD12864_DisplayOneLine(LINE3, line3, 16);
         break;
-    case ALARMCLOCK_THURSDAY:
+    case SET_ALARMCLOCK_THURSDAY:
         if (interruptCount < (500 / INTERVAL))
         {
             if (setAlarmWeekday & (1 << 4))
@@ -1140,7 +1209,7 @@ void Timer0() interrupt 1
         }
         LCD12864_DisplayOneLine(LINE3, line3, 16);
         break;
-    case ALARMCLOCK_FRIDAY:
+    case SET_ALARMCLOCK_FRIDAY:
         if (interruptCount < (500 / INTERVAL))
         {
             if (setAlarmWeekday & (1 << 5))
@@ -1155,7 +1224,7 @@ void Timer0() interrupt 1
         }
         LCD12864_DisplayOneLine(LINE3, line3, 16);
         break;
-    case ALARMCLOCK_SATURDAY:
+    case SET_ALARMCLOCK_SATURDAY:
         if (interruptCount < (500 / INTERVAL))
         {
             if (setAlarmWeekday & (1 << 6))
