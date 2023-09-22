@@ -1,4 +1,5 @@
 #include <REG51.H>
+
 #include "LCD12864.h"
 #include "AT24C02.h"
 
@@ -172,6 +173,17 @@ void DisplayHourlyChime();
 void ClearChar(unsigned char *str);
 // 检查日期程序，返回0表示日期无误，返回1表示日期有误
 bit CheckDate(unsigned int year, unsigned char month, unsigned char day);
+
+sbit DQ = P0 ^ 0; // 温度传感器引脚
+
+unsigned char code Array_Point[] = {0, 1, 1, 2, 3, 3, 4, 4, 5, 6, 6, 7, 8, 8, 9, 9}; // 小数查表
+
+void Delay_us(unsigned int uiUs); // us延时函数,12MHZ晶振有效
+
+void DS18B20_Init(void);                      // DS18B20初始化
+unsigned char DS18B20_ReadOneChar(void);      // 读取一个数据
+void DS18B20_WriteOneChar(unsigned char dat); // 写入一个数据
+unsigned int DS18B20_ReadTemperature(void);   // 读取温度
 
 void main()
 {
@@ -851,31 +863,38 @@ void DisplayWeekday()
     switch (weekday)
     {
     case 0:
-        strncpy(line3 + 6, "周日", 4);
+        strncpy(line3 + 2, "周日", 4);
         break;
     case 1:
-        strncpy(line3 + 6, "周一", 4);
+        strncpy(line3 + 2, "周一", 4);
         break;
     case 2:
-        strncpy(line3 + 6, "周二", 4);
+        strncpy(line3 + 2, "周二", 4);
         break;
     case 3:
-        strncpy(line3 + 6, "周", 2);
-        line3[8] = 0xC8;
-        line3[9] = 0xFD;
+        strncpy(line3 + 2, "周", 2);
+        line3[4] = 0xC8;
+        line3[5] = 0xFD;
         break;
     case 4:
-        strncpy(line3 + 6, "周四", 4);
+        strncpy(line3 + 2, "周四", 4);
         break;
     case 5:
-        strncpy(line3 + 6, "周五", 4);
+        strncpy(line3 + 2, "周五", 4);
         break;
     case 6:
-        strncpy(line3 + 6, "周六", 4);
+        strncpy(line3 + 2, "周六", 4);
         break;
     default:
         break;
     }
+
+    line3[8] = (DS18B20_ReadTemperature() >> 4) / 10 + '0';
+    line3[9] = (DS18B20_ReadTemperature() >> 4) % 10 + '0';
+    line3[10] = '.';
+    line3[11] = Array_Point[DS18B20_ReadTemperature() & 0x000F] + '0';
+    line3[12] = 0xA1;
+    line3[13] = 0xE6;
 
     LCD12864_DisplayOneLine(LINE3, line3, 16);
 }
@@ -1267,5 +1286,81 @@ void Timer0() interrupt 1
         break;
     default:
         break;
+    }
+}
+
+void DS18B20_Init(void)
+{
+    unsigned char x = 0;
+    DQ = 1; // DQ复位
+    Delay_us(10);
+    // Delay(8);  //稍做延时,10us
+    DQ = 0; // 单片机将DQ拉低
+    Delay_us(500);
+    // Delay(80); //精确延时 大于 480us ,498us
+    DQ = 1; // 拉高总线
+    Delay_us(154);
+    // Delay(14);	//154us
+    x = DQ; // 稍做延时后 如果x=0则初始化成功 x=1则初始化失败
+    Delay_us(212);
+    // Delay(20); //212us
+}
+
+unsigned char DS18B20_ReadOneChar(void)
+{
+    unsigned char i = 0;
+    unsigned char dat = 0;
+    for (i = 8; i > 0; i--)
+    {
+        DQ = 0; // 给脉冲信号
+        dat >>= 1;
+        DQ = 1; // 给脉冲信号
+        if (DQ)
+            dat |= 0x80;
+        Delay_us(56);
+        // Delay(4); //56us
+    }
+    return (dat);
+}
+
+void DS18B20_WriteOneChar(unsigned char dat)
+{
+    unsigned char i = 0;
+    for (i = 8; i > 0; i--)
+    {
+        DQ = 0;
+        DQ = dat & 0x01;
+        Delay_us(66);
+        // Delay(5); //66us
+        DQ = 1;
+        dat >>= 1;
+    }
+}
+
+unsigned int DS18B20_ReadTemperature(void)
+{
+    unsigned char a = 0;
+    unsigned char b = 0;
+    unsigned int t = 0;
+    DS18B20_Init();
+    DS18B20_WriteOneChar(0xCC); // 跳过读序号列号的操作
+    DS18B20_WriteOneChar(0x44); // 启动温度转换
+    DS18B20_Init();
+    DS18B20_WriteOneChar(0xCC); // 跳过读序号列号的操作
+    DS18B20_WriteOneChar(0xBE); // 读取温度寄存器等（共可读9个寄存器） 前两个就是温度
+    a = DS18B20_ReadOneChar();
+    b = DS18B20_ReadOneChar();
+    t = b;
+    t <<= 8;
+    t = t | a;
+    // t= t/2; //放大10倍输出并四舍五入---此行没用
+    return (t);
+}
+
+void Delay_us(unsigned int uiUs) // us延时函数
+{
+    for (; uiUs > 0; uiUs--)
+    {
+        ;
     }
 }
