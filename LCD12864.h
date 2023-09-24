@@ -10,15 +10,15 @@ sbit LCD12864_PSB = P3 ^ 7;
 
 #define LCDPORT P1
 
-#define LINE1 0x80
-#define LINE2 0x90
-#define LINE3 0x88
-#define LINE4 0x98
+#define LINE0 0x80
+#define LINE1 0x90
+#define LINE2 0x88
+#define LINE3 0x98
 
 void LCD12864_Init(void);
 void LCD12864_WriteInfomation(unsigned char ucData, bit bComOrData);
 void LCD12864_CheckBusy(void);
-void LCD12864_DisplayOneLine(unsigned char ucPos, unsigned char *ucStr, unsigned char len);
+void LCD12864_DisplayOneLine(unsigned char ucPos, unsigned char *ucStr);
 void LCD12864_Delay(unsigned int uiCount);
 
 #endif
