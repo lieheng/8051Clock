@@ -1,0 +1,105 @@
+C51 COMPILER V9.01   DS18B20                                                               09/24/2023 14:50:46 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE DS18B20
+OBJECT MODULE PLACED IN DS18B20.OBJ
+COMPILER INVOKED BY: D:\Software\Keil\C51\BIN\C51.EXE DS18B20.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include "DS18B20.h"
+   2          
+   3          unsigned char code Array_Point[] = {0, 1, 1, 2, 3, 3, 4, 4, 5, 6, 6, 7, 8, 8, 9, 9}; // 小数查表
+   4          
+   5          void DS18B20_Init()
+   6          {
+   7   1          unsigned char x = 0;
+   8   1          DQ = 1; // DQ复位
+   9   1          DS18B20_Delay(10);
+  10   1          // Delay(8);  //稍做延时,10us
+  11   1          DQ = 0; // 单片机将DQ拉低
+  12   1          DS18B20_Delay(500);
+  13   1          // Delay(80); //精确延时 大于 480us ,498us
+  14   1          DQ = 1; // 拉高总线
+  15   1          DS18B20_Delay(154);
+  16   1          // Delay(14);       //154us
+  17   1          x = DQ; // 稍做延时后 如果x=0则初始化成功 x=1则初始化失败
+  18   1          DS18B20_Delay(212);
+  19   1          // Delay(20); //212us
+  20   1      }
+  21          
+  22          unsigned char DS18B20_ReadOneChar()
+  23          {
+  24   1          unsigned char i = 0;
+  25   1          unsigned char dat = 0;
+  26   1          for (i = 8; i > 0; i--)
+  27   1          {
+  28   2              DQ = 0; // 给脉冲信号
+  29   2              dat >>= 1;
+  30   2              DQ = 1; // 给脉冲信号
+  31   2              if (DQ)
+  32   2                  dat |= 0x80;
+  33   2              DS18B20_Delay(56);
+  34   2              // Delay(4); //56us
+  35   2          }
+  36   1          return (dat);
+  37   1      }
+  38          
+  39          void DS18B20_WriteOneChar(unsigned char dat)
+  40          {
+  41   1          unsigned char i = 0;
+  42   1          for (i = 8; i > 0; i--)
+  43   1          {
+  44   2              DQ = 0;
+  45   2              DQ = dat & 0x01;
+  46   2              DS18B20_Delay(66);
+  47   2              // Delay(5); //66us
+  48   2              DQ = 1;
+  49   2              dat >>= 1;
+  50   2          }
+  51   1      }
+  52          
+  53          unsigned int DS18B20_ReadTemperature(void)
+  54          {
+  55   1          unsigned char a = 0;
+C51 COMPILER V9.01   DS18B20                                                               09/24/2023 14:50:46 PAGE 2   
+
+  56   1          unsigned char b = 0;
+  57   1          unsigned int t = 0;
+  58   1          DS18B20_Init();
+  59   1          DS18B20_WriteOneChar(0xCC); // 跳过读序号列号的操作
+  60   1          DS18B20_WriteOneChar(0x44); // 启动温度转换
+  61   1          DS18B20_Init();
+  62   1          DS18B20_WriteOneChar(0xCC); // 跳过读序号列号的操作
+  63   1          DS18B20_WriteOneChar(0xBE); // 读取温度寄存器等（共可读9个寄存器） 前两个就是温
+             -度
+  64   1          a = DS18B20_ReadOneChar();
+  65   1          b = DS18B20_ReadOneChar();
+  66   1          t = b;
+  67   1          t <<= 8;
+  68   1          t = t | a;
+  69   1          // t= t/2; //放大10倍输出并四舍五入---此行没用
+  70   1          return (t);
+  71   1      }
+  72          
+  73          void DS18B20_Delay(unsigned int uiUs) // us延时函数
+  74          {
+  75   1          for (; uiUs > 0; uiUs--)
+  76   1          {
+  77   2              ;
+  78   2          }
+  79   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    192    ----
+   CONSTANT SIZE    =     16    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       6
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -172,13 +172,41 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>52</ColumnNumber>
+      <ColumnNumber>67</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>169</TopLine>
-      <CurrentLine>204</CurrentLine>
+      <TopLine>1272</TopLine>
+      <CurrentLine>1291</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>.\Clock.c</PathWithFileName>
       <FilenameWithoutPath>Clock.c</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>2</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\LCD12864.c</PathWithFileName>
+      <FilenameWithoutPath>LCD12864.c</FilenameWithoutPath>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>3</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <Focus>0</Focus>
+      <ColumnNumber>0</ColumnNumber>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <TopLine>0</TopLine>
+      <CurrentLine>0</CurrentLine>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\AT24C02.c</PathWithFileName>
+      <FilenameWithoutPath>AT24C02.c</FilenameWithoutPath>
     </File>
   </Group>
 
@@ -1527,9 +1555,9 @@
       <Documents>
         <Doc>
           <Name>.\Clock.c</Name>
-          <ColumnNumber>52</ColumnNumber>
-          <TopLine>169</TopLine>
-          <CurrentLine>204</CurrentLine>
+          <ColumnNumber>67</ColumnNumber>
+          <TopLine>1272</TopLine>
+          <CurrentLine>1291</CurrentLine>
         </Doc>
       </Documents>
     </MDIGroup>
